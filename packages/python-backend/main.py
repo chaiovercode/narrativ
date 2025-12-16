@@ -45,6 +45,13 @@ from services import (
 from services.brand import get_brands, save_brand, delete_brand, get_brand_by_id
 from services.boards import load_boards, add_board, delete_board, set_vault_path as set_boards_vault_path
 from services.styles import set_vault_path as set_styles_vault_path
+from services.notes import (
+    load_notes,
+    save_note,
+    delete_note as delete_note_service,
+    get_note_by_id,
+    set_vault_path as set_notes_vault_path
+)
 
 # =============================================================================
 # APP SETUP
@@ -162,6 +169,7 @@ async def set_vault(request: VaultRequest):
     # Notify services of vault path
     set_boards_vault_path(request.path)
     set_styles_vault_path(request.path)
+    set_notes_vault_path(request.path)
 
     # Update output directory to vault attachments
     attachments_dir = os.path.join(VAULT_PATH, "attachments")
@@ -176,12 +184,17 @@ async def set_vault(request: VaultRequest):
     styles_dir = os.path.join(VAULT_PATH, "styles")
     os.makedirs(styles_dir, exist_ok=True)
 
+    # Create notes directory
+    notes_dir = os.path.join(VAULT_PATH, "notes")
+    os.makedirs(notes_dir, exist_ok=True)
+
     return {
         "status": "ok",
         "vault_path": VAULT_PATH,
         "attachments_dir": OUTPUT_DIR,
         "research_dir": research_dir,
-        "styles_dir": styles_dir
+        "styles_dir": styles_dir,
+        "notes_dir": notes_dir
     }
 
 @app.get("/vault")
@@ -571,6 +584,67 @@ async def remove_board(board_type: str, board_id: int):
         if not success:
             raise HTTPException(status_code=404, detail="Board not found")
         return {"status": "ok", "deleted": board_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# NOTES ENDPOINTS
+# =============================================================================
+
+@app.get("/notes")
+async def get_notes():
+    """Get all notes from the vault."""
+    try:
+        notes = load_notes()
+        return {"notes": notes}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/notes/{note_id}")
+async def get_note(note_id: str):
+    """Get a single note by ID."""
+    try:
+        note = get_note_by_id(note_id)
+        if not note:
+            raise HTTPException(status_code=404, detail="Note not found")
+        return note
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/notes")
+async def create_or_update_note(note: dict):
+    """Create or update a note."""
+    if not note.get('title'):
+        raise HTTPException(status_code=400, detail="Title is required")
+
+    try:
+        saved = save_note(note)
+        return {"status": "ok", "note": saved}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/notes/{note_id}")
+async def remove_note(note_id: str):
+    """Delete a note by ID."""
+    try:
+        success = delete_note_service(note_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Note not found")
+        return {"status": "ok", "deleted": note_id}
     except HTTPException:
         raise
     except Exception as e:

@@ -202,3 +202,21 @@ pub fn reveal_vault_in_finder(path: String) -> Result<(), String> {
 pub fn clear_vault_path() -> Result<(), String> {
     vault::clear_vault_path()
 }
+
+/// Get vault history
+#[tauri::command]
+pub fn get_vault_history() -> Vec<vault::VaultHistoryEntry> {
+    vault::load_vault_history()
+}
+
+/// Add vault to history
+#[tauri::command]
+pub fn add_vault_to_history(name: String, path: String) -> Result<(), String> {
+    vault::add_to_vault_history(&name, &path)
+}
+
+/// Remove vault from history
+#[tauri::command]
+pub fn remove_vault_from_history(path: String) -> Result<(), String> {
+    vault::remove_from_vault_history(&path)
+}

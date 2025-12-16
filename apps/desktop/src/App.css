@@ -58,7 +58,9 @@
   --font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   overflow: hidden;
 }
@@ -75,10 +77,19 @@ body {
    APP LAYOUT
    ============================================================================= */
 
-.app-container {
+.app-wrapper {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  /* Push content below the title bar */
+  margin-top: 0;
 }
 
 /* =============================================================================
@@ -88,17 +99,20 @@ body {
 .app-sidebar {
   width: 200px;
   min-width: 200px;
-  background: #181926;
-  border-right: 1px solid #363a4f;
+  background: #11111b;
+  border-right: 2px solid #494d64;
   display: flex;
   flex-direction: column;
   user-select: none;
   transition: width 0.15s ease, min-width 0.15s ease;
+  z-index: 1000;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .app-sidebar.collapsed {
-  width: 48px;
-  min-width: 48px;
+  width: 60px;
+  min-width: 60px;
 }
 
 /* Toolbar */
@@ -218,8 +232,33 @@ body {
 
 /* Collapsed nav styles */
 .app-sidebar.collapsed .nav-item {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 8px;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  padding: 0;
+  color: #cad3f5;
+  border-radius: 8px;
+}
+
+.app-sidebar.collapsed .nav-item svg {
+  opacity: 1;
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+.app-sidebar.collapsed .nav-item:hover {
+  background: #363a4f;
+  color: #ffffff;
+}
+
+.app-sidebar.collapsed .nav-item.active {
+  background: #494d64;
+  color: #c6a0f6;
 }
 
 .app-sidebar.collapsed .nav-chevron {
@@ -227,7 +266,9 @@ body {
 }
 
 .app-sidebar.collapsed .sidebar-nav {
-  padding: 8px 4px;
+  padding: 12px 8px;
+  gap: 8px;
+  align-items: center;
 }
 
 /* Footer */
@@ -270,8 +311,15 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .footer-actions {

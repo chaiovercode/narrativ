@@ -4,9 +4,13 @@ import Create from './pages/Create';
 import Gallery from './pages/Gallery';
 import VaultSetup from './pages/VaultSetup';
 import SettingsModal from './components/SettingsModal';
+import NotesPanel from './components/notes/NotesPanel';
+import StatusBar from './components/StatusBar';
 import { setVaultPath as setBackendVaultPath } from './services/api';
 import './App.css';
 import './styles/vault-setup.css';
+import './styles/notes-panel.css';
+import './styles/status-bar.css';
 
 // Obsidian-style icons
 const Icons = {
@@ -39,6 +43,12 @@ const Icons = {
       <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01" />
     </svg>
   ),
+  notes: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+    </svg>
+  ),
 };
 
 function App() {
@@ -48,6 +58,8 @@ function App() {
   const [vaultName, setVaultName] = useState(null);
   const [vaultLoading, setVaultLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [showVaultPicker, setShowVaultPicker] = useState(false);
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -61,12 +73,25 @@ function App() {
         e.preventDefault();
         setActiveView('create');
         setSettingsOpen(false);
+        setNotesOpen(false);
       }
       // Cmd+G for Gallery
       if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
         e.preventDefault();
         setActiveView('gallery');
         setSettingsOpen(false);
+        setNotesOpen(false);
+      }
+      // Cmd+Shift+N for Notes panel
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'n') {
+        e.preventDefault();
+        setNotesOpen(prev => {
+          const newState = !prev;
+          if (newState && activeView === 'gallery') {
+            setActiveView('create');
+          }
+          return newState;
+        });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -83,6 +108,12 @@ function App() {
           // Extract vault name from path
           const name = path.split('/').pop();
           setVaultName(name);
+          // Notify Python backend of vault path
+          try {
+            await setBackendVaultPath(path);
+          } catch (err) {
+            console.warn('Failed to notify backend of vault path:', err);
+          }
         }
       } catch (err) {
         console.log('No vault configured:', err);
@@ -93,21 +124,34 @@ function App() {
     checkVault();
   }, []);
 
-  // Check backend status periodically
+  // Check backend status periodically and ensure vault path is set
   useEffect(() => {
+    let vaultPathSent = false;
+
     const checkBackend = async () => {
       try {
         const status = await invoke('get_backend_status');
         setBackendStatus(status);
+
+        // When backend becomes ready, ensure vault path is set
+        if (status.running && vaultPath && !vaultPathSent) {
+          try {
+            await setBackendVaultPath(vaultPath);
+            vaultPathSent = true;
+            console.log('Vault path sent to backend:', vaultPath);
+          } catch (err) {
+            console.warn('Failed to send vault path to backend:', err);
+          }
+        }
       } catch (err) {
         console.log('Backend check failed:', err);
       }
     };
 
     checkBackend();
-    const interval = setInterval(checkBackend, 5000);
+    const interval = setInterval(checkBackend, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [vaultPath]);
 
   // Handle vault selection
   const handleVaultSelected = async (path, name) => {
@@ -136,9 +180,18 @@ function App() {
     );
   }
 
-  // Show vault setup if no vault configured
-  if (!vaultPath) {
-    return <VaultSetup onVaultSelected={handleVaultSelected} />;
+  // Show vault setup if no vault configured or user wants to switch
+  if (!vaultPath || showVaultPicker) {
+    return (
+      <VaultSetup
+        onVaultSelected={(path, name) => {
+          handleVaultSelected(path, name);
+          setShowVaultPicker(false);
+        }}
+        onClose={() => setShowVaultPicker(false)}
+        canClose={showVaultPicker && !!vaultPath}
+      />
+    );
   }
 
   const renderView = () => {
@@ -153,61 +206,72 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      {/* Obsidian-style Sidebar (Always Collapsed) */}
-      <aside className="app-sidebar collapsed">
-        {/* Navigation */}
-        <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${activeView === 'create' ? 'active' : ''}`}
-            onClick={() => setActiveView('create')}
-            title="Create (Cmd+N)"
-          >
-            <span className="nav-chevron">{Icons.chevron}</span>
-            {Icons.create}
-          </button>
-
-          <button
-            className={`nav-item ${activeView === 'gallery' ? 'active' : ''}`}
-            onClick={() => setActiveView('gallery')}
-            title="Gallery (Cmd+G)"
-          >
-            <span className="nav-chevron">{Icons.chevron}</span>
-            {Icons.gallery}
-          </button>
-        </nav>
-
-        {/* Footer with vault name and settings (like Obsidian) */}
-        <div className="sidebar-footer">
-          <div className="vault-section">
-            <span className={`status-dot ${backendStatus.running ? 'running' : 'stopped'}`} />
-          </div>
-          <div className="footer-actions">
+    <div className="app-wrapper">
+      <StatusBar backendStatus={backendStatus} />
+      <div className="app-container">
+        <aside className="app-sidebar collapsed">
+          <nav className="sidebar-nav">
             <button
-              className={`footer-btn ${settingsOpen ? 'active' : ''}`}
-              title="Settings (Cmd+,)"
-              onClick={() => setSettingsOpen(true)}
+              className={`nav-item ${activeView === 'create' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('create');
+                setNotesOpen(false);
+              }}
+              title="Create (Cmd+N)"
             >
-              {Icons.settings}
+              <span className="nav-chevron">{Icons.chevron}</span>
+              {Icons.create}
             </button>
+            <button
+              className={`nav-item ${activeView === 'gallery' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('gallery');
+                setNotesOpen(false);
+              }}
+              title="Gallery (Cmd+G)"
+            >
+              <span className="nav-chevron">{Icons.chevron}</span>
+              {Icons.gallery}
+            </button>
+            <button
+              className={`nav-item ${notesOpen ? 'active' : ''}`}
+              onClick={() => {
+                const newState = !notesOpen;
+                setNotesOpen(newState);
+                if (newState && activeView === 'gallery') {
+                  setActiveView('create');
+                }
+              }}
+              title="Notes (Cmd+Shift+N)"
+            >
+              <span className="nav-chevron">{Icons.chevron}</span>
+              {Icons.notes}
+            </button>
+          </nav>
+          <div className="sidebar-footer">
+            <div className="footer-actions">
+              <button
+                className={`footer-btn ${settingsOpen ? 'active' : ''}`}
+                title="Settings (Cmd+,)"
+                onClick={() => setSettingsOpen(true)}
+              >
+                {Icons.settings}
+              </button>
+            </div>
           </div>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="app-main">
-        {renderView()}
-      </main>
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onResetVault={() => {
-          setVaultPath(null);
-          setVaultName(null);
-        }}
-      />
+        </aside>
+        <main className="app-main">
+          {renderView()}
+        </main>
+        <NotesPanel isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onResetVault={() => {
+            setShowVaultPicker(true);
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -286,7 +286,12 @@ def add_board(board_type: str, board: Dict[str, Any]) -> Dict[str, Any]:
     boards = load_boards(board_type)
 
     # Add to beginning of list (newest first)
-    boards.insert(0, board)
+    # Check if exists first
+    existing_idx = next((i for i, b in enumerate(boards) if b.get('id') == board.get('id')), -1)
+    if existing_idx >= 0:
+        boards[existing_idx] = board
+    else:
+        boards.insert(0, board)
 
     # Limit to 100 boards per type
     boards = boards[:100]

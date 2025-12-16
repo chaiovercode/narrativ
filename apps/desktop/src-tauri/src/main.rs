@@ -60,6 +60,9 @@ fn main() {
             commands::validate_vault,
             commands::reveal_vault_in_finder,
             commands::clear_vault_path,
+            commands::get_vault_history,
+            commands::add_vault_to_history,
+            commands::remove_vault_from_history,
         ])
         .setup(|app| {
             println!("Revelio is starting...");

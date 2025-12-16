@@ -478,14 +478,12 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                     Reveal in Finder
                   </button>
                 )}
-                <button className="btn-primary" onClick={handleChangeVault}>
-                  {vaultPath ? 'Change Vault' : 'Select Vault'}
+                <button className="btn-primary" onClick={() => {
+                  onClose();
+                  if (onResetVault) onResetVault();
+                }}>
+                  Switch Vault
                 </button>
-                {vaultPath && (
-                  <button className="btn-danger" onClick={handleResetVault}>
-                    Reset Vault
-                  </button>
-                )}
               </div>
               <div className="vault-structure">
                 <span className="setting-label">Vault contains:</span>
@@ -493,6 +491,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                   <li><code>research/</code> - Markdown files for each story</li>
                   <li><code>attachments/</code> - Generated images</li>
                   <li><code>styles/</code> - Custom styles</li>
+                  <li><code>notes/</code> - Your personal notes</li>
                 </ul>
               </div>
             </div>

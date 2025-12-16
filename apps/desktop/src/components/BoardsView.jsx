@@ -48,22 +48,25 @@ export function BoardsView({
   return (
     <div className="boards-container">
       {/* Tabs */}
-      <div className="boards-tabs">
-        <button
-          className={`board-tab ${activeTab === 'research' ? 'active' : ''}`}
-          onClick={() => setActiveTab('research')}
-        >
-          Research
-          {savedResearch.length > 0 && <span className="tab-count">{savedResearch.length}</span>}
-        </button>
-        <button
-          className={`board-tab ${activeTab === 'images' ? 'active' : ''}`}
-          onClick={() => setActiveTab('images')}
-        >
-          Images
-          {savedImageBoards.length > 0 && <span className="tab-count">{savedImageBoards.length}</span>}
-        </button>
-      </div>
+      {/* Tabs - only show if no board selected */}
+      {!selectedBoard && !selectedResearchBoard && (
+        <div className="boards-tabs">
+          <button
+            className={`board-tab ${activeTab === 'research' ? 'active' : ''}`}
+            onClick={() => setActiveTab('research')}
+          >
+            Research
+            {savedResearch.length > 0 && <span className="tab-count">{savedResearch.length}</span>}
+          </button>
+          <button
+            className={`board-tab ${activeTab === 'images' ? 'active' : ''}`}
+            onClick={() => setActiveTab('images')}
+          >
+            Images
+            {savedImageBoards.length > 0 && <span className="tab-count">{savedImageBoards.length}</span>}
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {activeTab === 'images' ? (

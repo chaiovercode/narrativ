@@ -158,8 +158,7 @@
 }
 
 .board-stack-preview .stack-0 {
-  transform: rotate(-8deg) translateX(-20px);
-  z-index: 1;
+  display: none;
 }
 
 .board-stack-preview .stack-1 {
@@ -168,20 +167,19 @@
 }
 
 .board-stack-preview .stack-2 {
-  transform: rotate(8deg) translateX(20px);
-  z-index: 3;
+  display: none;
 }
 
 .board-card:hover .stack-0 {
-  transform: rotate(-12deg) translateX(-30px) scale(1.02);
+  display: none;
 }
 
 .board-card:hover .stack-1 {
-  transform: rotate(0deg) scale(1.05);
+  transform: scale(1.05);
 }
 
 .board-card:hover .stack-2 {
-  transform: rotate(12deg) translateX(30px) scale(1.02);
+  display: none;
 }
 
 .board-info {

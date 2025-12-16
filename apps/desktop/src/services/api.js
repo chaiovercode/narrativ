@@ -86,3 +86,39 @@ export async function getVaultInfo() {
   const data = await response.json();
   return data;
 }
+
+// =============================================================================
+// Notes
+// =============================================================================
+
+export async function fetchNotes() {
+  const response = await fetch(`${API_BASE}/notes`);
+  if (!response.ok) throw new Error('Failed to fetch notes');
+  const data = await response.json();
+  return data.notes;
+}
+
+export async function fetchNote(id) {
+  const response = await fetch(`${API_BASE}/notes/${id}`);
+  if (!response.ok) throw new Error('Failed to fetch note');
+  return await response.json();
+}
+
+export async function saveNoteApi(note) {
+  const response = await fetch(`${API_BASE}/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(note),
+  });
+  if (!response.ok) throw new Error('Failed to save note');
+  const data = await response.json();
+  return data.note;
+}
+
+export async function deleteNoteApi(id) {
+  const response = await fetch(`${API_BASE}/notes/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete note');
+  return true;
+}

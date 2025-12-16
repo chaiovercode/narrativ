@@ -1,0 +1,176 @@
+/* =============================================================================
+   TITLE BAR - macOS style with status icons
+   ============================================================================= */
+
+.title-bar {
+  height: 38px;
+  min-height: 38px;
+  background: #11111b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 8px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Space for macOS traffic lights */
+.traffic-light-spacer {
+  width: 76px;
+  flex-shrink: 0;
+}
+
+/* Center - App Title */
+.title-bar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.app-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* Right - Status Icons */
+.title-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.title-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.title-icon.status {
+  cursor: pointer;
+}
+
+.title-icon.status:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title-icon.status.connected {
+  color: var(--success);
+}
+
+.title-icon.status.disconnected {
+  color: var(--warning);
+  animation: pulse-icon 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.title-icon.update {
+  background: transparent;
+  border: none;
+  color: var(--success);
+  cursor: pointer;
+}
+
+.title-icon.update:hover {
+  background: rgba(166, 218, 149, 0.15);
+}
+
+.title-icon.update svg {
+  animation: bounce-down 1s ease-in-out infinite;
+}
+
+@keyframes bounce-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+/* Status Wrapper */
+.status-wrapper {
+  position: relative;
+}
+
+/* Status Menu Dropdown */
+.status-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: #1e2030;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.status-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-menu-header .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.status-menu-header .status-dot.connected {
+  background: var(--success);
+}
+
+.status-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+.status-menu-item .label {
+  color: var(--text-muted);
+}
+
+.status-menu-item .value {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.status-menu-item .value.success {
+  color: var(--success);
+}
+
+.status-menu-item .value.warning {
+  color: var(--warning);
+}
+
+/* Backdrop to close menu */
+.status-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
