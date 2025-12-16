@@ -1,0 +1,20 @@
+{
+  "name": "revelio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered social media story creator - desktop app",
+  "scripts": {
+    "dev": "pnpm --filter @revelio/desktop dev",
+    "build": "pnpm --filter @revelio/desktop build",
+    "tauri": "pnpm --filter @revelio/desktop tauri",
+    "docs:dev": "pnpm --filter @revelio/docs start",
+    "docs:build": "pnpm --filter @revelio/docs build"
+  },
+  "keywords": ["ai", "story-generator", "social-media", "tauri", "desktop-app"],
+  "author": "chaiovercode",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

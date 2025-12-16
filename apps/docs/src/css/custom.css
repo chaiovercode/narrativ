@@ -1,0 +1,80 @@
+/**
+ * Revelio Documentation Custom Styles
+ */
+
+:root {
+  --ifm-color-primary: #6366f1;
+  --ifm-color-primary-dark: #4f46e5;
+  --ifm-color-primary-darker: #4338ca;
+  --ifm-color-primary-darkest: #3730a3;
+  --ifm-color-primary-light: #818cf8;
+  --ifm-color-primary-lighter: #a5b4fc;
+  --ifm-color-primary-lightest: #c7d2fe;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #818cf8;
+  --ifm-color-primary-dark: #6366f1;
+  --ifm-color-primary-darker: #4f46e5;
+  --ifm-color-primary-darkest: #4338ca;
+  --ifm-color-primary-light: #a5b4fc;
+  --ifm-color-primary-lighter: #c7d2fe;
+  --ifm-color-primary-lightest: #e0e7ff;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Hero section styling */
+.hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.hero__title {
+  font-size: 3rem;
+}
+
+/* Code blocks */
+pre {
+  border-radius: 8px;
+}
+
+/* Tables */
+table {
+  display: table;
+  width: 100%;
+}
+
+/* Admonitions/callouts */
+.admonition {
+  border-radius: 8px;
+}
+
+/* Footer */
+.footer {
+  background: #0a0a0a;
+}
+
+/* Navbar */
+.navbar {
+  backdrop-filter: blur(10px);
+}
+
+/* Better link styling */
+a {
+  transition: color 0.2s ease;
+}
+
+/* Card styling for feature boxes */
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--ifm-card-background-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}

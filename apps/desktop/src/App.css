@@ -1,0 +1,393 @@
+/* =============================================================================
+   REVELIO - Native Mac App Styles
+   ============================================================================= */
+
+@import './styles/sidebar.css';
+@import './styles/buttons.css';
+@import './styles/dropdown.css';
+@import './styles/grid.css';
+@import './styles/lightbox.css';
+@import './styles/review.css';
+@import './styles/research-panel.css';
+@import './styles/generation.css';
+@import './styles/boards.css';
+@import './styles/settings.css';
+@import './styles/style-selector.css';
+@import './styles/gallery.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Catppuccin Macchiato Theme */
+  --bg-window: #1e2030;
+  --bg-sidebar: #181926;
+  --bg-content: #1e2030;
+  --bg-elevated: #363a4f;
+  --bg-hover: #494d64;
+  --bg-active: #5b6078;
+  --bg-input: #363a4f;
+
+  /* Legacy variables for existing components */
+  --bg-primary: #11111b;
+  --bg-secondary: #1e2030;
+  --bg-tertiary: #181926;
+
+  --text-primary: #cad3f5;
+  --text-secondary: #b8c0e0;
+  --text-muted: #6e738d;
+
+  --border-subtle: #363a4f;
+  --border-medium: #494d64;
+
+  /* Accent - Mauve */
+  --accent-primary: #c6a0f6;
+  --accent-hover: #b7bdf8;
+  --accent-blue: #8aadf4;
+  --success: #a6da95;
+  --warning: #eed49f;
+  --error: #ed8796;
+
+  --nav-sidebar-width: 180px;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-window);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =============================================================================
+   APP LAYOUT
+   ============================================================================= */
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   SIDEBAR - Obsidian Style Dark Theme
+   ============================================================================= */
+
+.app-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: #181926;
+  border-right: 1px solid #363a4f;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  transition: width 0.15s ease, min-width 0.15s ease;
+}
+
+.app-sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+}
+
+/* Toolbar */
+.sidebar-toolbar {
+  height: 36px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid #363a4f;
+  -webkit-app-region: drag;
+}
+
+.toolbar-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #6e738d;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  -webkit-app-region: no-drag;
+}
+
+.toolbar-btn:hover {
+  background: #363a4f;
+  color: #cad3f5;
+}
+
+/* Navigation */
+.sidebar-nav {
+  flex: 1;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  -webkit-app-region: no-drag;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #b8c0e0;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.nav-item:hover {
+  background: #363a4f;
+  color: #cad3f5;
+}
+
+.nav-item.active {
+  background: #494d64;
+  color: #cad3f5;
+}
+
+.nav-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  transition: transform 0.15s ease;
+}
+
+.nav-item.active .nav-chevron {
+  transform: rotate(90deg);
+  opacity: 0.8;
+}
+
+.nav-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.nav-item.active svg {
+  opacity: 1;
+}
+
+.nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-shortcut {
+  font-size: 11px;
+  color: #6e738d;
+  background: #363a4f;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  margin-left: auto;
+}
+
+.nav-item.active .nav-shortcut {
+  background: #5b6078;
+  color: #b8c0e0;
+}
+
+/* Collapsed nav styles */
+.app-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 8px;
+}
+
+.app-sidebar.collapsed .nav-chevron {
+  display: none;
+}
+
+.app-sidebar.collapsed .sidebar-nav {
+  padding: 8px 4px;
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: 8px;
+  border-top: 1px solid #363a4f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  -webkit-app-region: no-drag;
+}
+
+.vault-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vault-name {
+  font-size: 12px;
+  color: #cad3f5;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6e738d;
+  flex-shrink: 0;
+}
+
+.status-dot.running {
+  background: var(--success);
+}
+
+.status-dot.stopped {
+  background: var(--warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.footer-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #6e738d;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.footer-btn:hover {
+  background: #363a4f;
+  color: #b8c0e0;
+}
+
+.footer-btn.active {
+  background: #363a4f;
+  color: #cad3f5;
+}
+
+/* Collapsed footer */
+.app-sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+  padding: 8px 4px;
+}
+
+.app-sidebar.collapsed .vault-section {
+  justify-content: center;
+}
+
+/* =============================================================================
+   MAIN CONTENT
+   ============================================================================= */
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-content);
+}
+
+/* =============================================================================
+   SCROLLBAR - macOS Style
+   ============================================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* =============================================================================
+   PAGE LAYOUTS
+   ============================================================================= */
+
+/* Create Page - Full width layout with form sidebar */
+.create-page {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.create-page .sidebar {
+  background: var(--bg-secondary);
+}
+
+.create-page .main-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+/* Gallery and Settings pages */
+.gallery-page,
+.settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--bg-primary);
+}
+
+/* Empty state styling */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+}

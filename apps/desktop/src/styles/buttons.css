@@ -1,0 +1,276 @@
+/* =============================================================================
+   BUTTONS
+   ============================================================================= */
+
+/* Generate Button */
+.generate-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: #c6a0f6;
+  color: #1e2030;
+  border: none;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #b7bdf8;
+}
+
+.generate-btn:active:not(:disabled) {
+  opacity: 0.9;
+}
+
+.generate-btn:disabled {
+  background: var(--accent-primary);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.generate-btn.generating-images {
+  background: #a6da95;
+}
+
+.generate-btn.secondary {
+  background: rgba(202, 211, 245, 0.05);
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  color: #cad3f5;
+}
+
+.generate-btn.secondary:hover {
+  background: rgba(202, 211, 245, 0.1);
+}
+
+/* Button Content */
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+}
+
+.btn-glow {
+  display: none;
+}
+
+/* Button Spinner */
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(30, 32, 48, 0.2);
+  border-top-color: #1e2030;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Primary/Secondary Buttons */
+.btn-primary {
+  background: var(--accent-primary);
+  color: #1e2030;
+  border: none;
+  padding: 0.875rem 2.5rem;
+  border-radius: 2px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: rgba(202, 211, 245, 0.06);
+  color: #cad3f5;
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  padding: 0.875rem 1.75rem;
+  border-radius: 2px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+  background: rgba(202, 211, 245, 0.1);
+}
+
+/* Overlay Button */
+.overlay-btn {
+  background: var(--accent-primary);
+  color: #1e2030;
+  border: none;
+  padding: 0.7rem 1.25rem;
+  border-radius: 2px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  transition: all 0.15s;
+}
+
+.overlay-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+/* Regenerate Button */
+.regenerate-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: var(--accent-primary);
+  color: #1e2030;
+  border: none;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.regenerate-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Back Button */
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(202, 211, 245, 0.05);
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.back-btn:hover {
+  background: rgba(202, 211, 245, 0.1);
+  color: #cad3f5;
+}
+
+/* Close Button */
+.close-btn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(202, 211, 245, 0.1);
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  width: 44px;
+  height: 44px;
+  border-radius: 2px;
+  color: #cad3f5;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.close-btn:hover {
+  background: var(--accent-primary);
+  color: #1e2030;
+  border-color: var(--accent-primary);
+}
+
+/* Copy Button */
+.copy-btn {
+  background: var(--accent-primary) !important;
+  color: #1e2030 !important;
+}
+
+.copy-btn:hover {
+  background: var(--accent-hover) !important;
+}
+
+/* Download Button */
+.download-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-primary);
+  color: #1e2030;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.download-all-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Grid Download Button */
+.grid-download-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: #cad3f5;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.grid-item:hover .grid-download-btn {
+  opacity: 1;
+}
+
+.grid-download-btn:hover {
+  background: var(--accent-primary);
+  color: #1e2030;
+}
+
+/* Settings Button */
+.settings-btn {
+  padding: 0.75rem;
+  background: rgba(202, 211, 245, 0.05);
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-btn:hover {
+  background: rgba(202, 211, 245, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(202, 211, 245, 0.2);
+}
+
+.settings-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

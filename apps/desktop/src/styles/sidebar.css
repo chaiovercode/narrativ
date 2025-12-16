@@ -1,0 +1,614 @@
+/* =============================================================================
+   SIDEBAR - Redesigned
+   ============================================================================= */
+
+.sidebar {
+  width: 400px;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 50;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--accent-primary);
+  opacity: 0.3;
+}
+
+/* Scrollable Content Area */
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 1.75rem;
+  padding-bottom: 1rem;
+}
+
+/* Custom Scrollbar - Always visible */
+.sidebar-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  min-height: 40px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* =============================================================================
+   COMPACT HEADER
+   ============================================================================= */
+
+.panel-header-compact {
+  margin-bottom: 1.5rem;
+}
+
+.panel-title-compact {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: white;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.panel-subtitle-compact {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* =============================================================================
+   HERO INPUT
+   ============================================================================= */
+
+.input-section-primary {
+  margin-bottom: 1.25rem;
+}
+
+.topic-input-hero {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  font-size: 1.05rem;
+  color: white;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.topic-input-hero::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.topic-input-hero:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.topic-input-hero:focus {
+  border-color: var(--accent-primary);
+  background: rgba(198, 160, 246, 0.04);
+}
+
+.topic-input-hero:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   COMPACT MODE TOGGLE
+   ============================================================================= */
+
+.mode-toggle-compact {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mode-btn-compact {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.mode-btn-compact:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.mode-btn-compact.active {
+  background: var(--accent-primary);
+  color: #1e2030;
+  font-weight: 600;
+  border-color: var(--accent-primary);
+}
+
+.mode-btn-compact:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   SECTION DIVIDER
+   ============================================================================= */
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  margin: 1.25rem 0;
+}
+
+/* =============================================================================
+   COLLAPSIBLE SECTION
+   ============================================================================= */
+
+.collapsible-section {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.collapsible-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.collapsible-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.collapsible-chevron {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.collapsible-section.open .collapsible-chevron {
+  transform: rotate(180deg);
+}
+
+.collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.collapsible-section.open .collapsible-content {
+  max-height: 600px;
+  overflow: visible;
+}
+
+.collapsible-inner {
+  padding: 0.75rem 1rem 1rem;
+}
+
+/* Dropdown inside collapsible opens upward */
+.collapsible-inner .dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 4px);
+  animation: slideUp 0.1s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.collapsible-inner .dropdown-trigger.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* =============================================================================
+   SECTION LABEL
+   ============================================================================= */
+
+.section-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+/* =============================================================================
+   OPTIONS ROW
+   ============================================================================= */
+
+.options-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.options-row .custom-dropdown {
+  flex: 1;
+}
+
+/* =============================================================================
+   ADVANCED SETTINGS
+   ============================================================================= */
+
+.advanced-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.advanced-grid .custom-dropdown:last-child {
+  grid-column: span 2;
+}
+
+/* =============================================================================
+   STYLE SECTION
+   ============================================================================= */
+
+.style-section {
+  margin-bottom: 1rem;
+}
+
+.style-section .section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.style-active-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  background: var(--accent-primary);
+  color: #1e2030;
+  border-radius: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =============================================================================
+   STICKY FOOTER
+   ============================================================================= */
+
+.sidebar-sticky-footer {
+  padding: 1rem 1.75rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =============================================================================
+   SIDEBAR BUTTON ROW
+   ============================================================================= */
+
+.sidebar-button-row {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.sidebar-button-row .generate-btn {
+  width: auto;
+  flex: 1;
+}
+
+.sidebar-btn {
+  flex: 1;
+  padding: 0.875rem 1.25rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.sidebar-btn.cancel {
+  background: rgba(202, 211, 245, 0.06);
+  border: 1px solid rgba(202, 211, 245, 0.1);
+  color: var(--text-primary);
+}
+
+.sidebar-btn.cancel:hover {
+  background: rgba(202, 211, 245, 0.12);
+}
+
+.sidebar-btn.reset {
+  background: #ed8796;
+  color: #1e2030;
+}
+
+.sidebar-btn.reset:hover {
+  background: #ee99a0;
+}
+
+.sidebar-button-row:has(.generate-btn) .sidebar-btn.cancel {
+  flex: 0 0 auto;
+}
+
+/* =============================================================================
+   PASTE MODE
+   ============================================================================= */
+
+.paste-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.paste-title-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  color: white;
+  outline: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.paste-title-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.paste-title-input:focus {
+  border-color: var(--accent-primary);
+  background: rgba(198, 160, 246, 0.03);
+}
+
+.paste-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.875rem 1rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  color: white;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: all 0.15s;
+}
+
+.paste-textarea:focus {
+  border-color: var(--accent-primary);
+  background: rgba(198, 160, 246, 0.03);
+}
+
+.paste-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.paste-textarea-wrapper {
+  position: relative;
+}
+
+.paste-char-count {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.paste-char-count.warning {
+  color: #f59e0b;
+}
+
+.paste-char-count.limit {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.paste-textarea:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   LEGACY SUPPORT (keeping some old classes for components that use them)
+   ============================================================================= */
+
+.input-group {
+  margin-bottom: 1rem;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.topic-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.875rem 1rem;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  color: white;
+  outline: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.topic-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.topic-input:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.topic-input:focus {
+  border-color: var(--accent-primary);
+  background: rgba(198, 160, 246, 0.03);
+}
+
+.options-section {
+  margin-bottom: 1.5rem;
+}
+
+.mode-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  padding: 3px;
+  margin-bottom: 1rem;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: all 0.15s;
+}
+
+.mode-btn:hover:not(:disabled) {
+  color: white;
+}
+
+.mode-btn.active {
+  background: #c6a0f6;
+  color: #1e2030;
+  font-weight: 600;
+}
+
+.mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.panel-header {
+  margin-bottom: 0.5rem;
+}
+
+.panel-eyebrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.panel-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: white;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.panel-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.footer-brand {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}

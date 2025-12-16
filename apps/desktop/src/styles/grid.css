@@ -1,0 +1,151 @@
+/* =============================================================================
+   GRID & STACK VIEWS
+   ============================================================================= */
+
+/* Stack View Container */
+.stack-view-container {
+  height: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-top: 2rem;
+  animation: fadeIn 0.8s ease;
+  perspective: 1000px;
+}
+
+.stack-collection {
+  position: relative;
+  width: 260px;
+  height: 460px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+  cursor: pointer;
+}
+
+.stack-view-container:hover .stack-collection {
+  transform: translateY(-20px);
+}
+
+.stack-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: 50% 100%;
+}
+
+.stack-card:nth-child(1) { transform: rotate(-4deg) translateY(0); z-index: 1; }
+.stack-card:nth-child(2) { transform: rotate(3deg) translateY(0); z-index: 2; }
+.stack-card:nth-child(3) { transform: rotate(-2deg) translateY(0); z-index: 3; }
+.stack-card:nth-child(4) { transform: rotate(4deg) translateY(0); z-index: 4; }
+.stack-card:nth-child(5) { transform: rotate(0deg) translateY(0); z-index: 5; }
+
+.stack-view-container:hover .stack-card:nth-child(1) {
+  transform: rotate(-20deg) translateX(-60px) translateY(10px);
+}
+.stack-view-container:hover .stack-card:nth-child(2) {
+  transform: rotate(-10deg) translateX(-30px) translateY(0);
+}
+.stack-view-container:hover .stack-card:nth-child(3) {
+  transform: rotate(0deg) translateY(-10px);
+  z-index: 10;
+  scale: 1.05;
+  box-shadow: 0 20px 50px rgba(255, 255, 255, 0.1);
+}
+.stack-view-container:hover .stack-card:nth-child(4) {
+  transform: rotate(10deg) translateX(30px) translateY(0);
+}
+.stack-view-container:hover .stack-card:nth-child(5) {
+  transform: rotate(20deg) translateX(60px) translateY(10px);
+}
+
+.stack-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stack-label {
+  margin-top: 3rem;
+  text-align: center;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.stack-view-container:hover .stack-label {
+  opacity: 1;
+}
+
+.stack-label h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+}
+
+.stack-label p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Pinterest Grid */
+.pinterest-grid {
+  columns: 4 250px;
+  column-gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+.grid-item {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.5s ease-out backwards;
+}
+
+.grid-item:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-hover);
+  z-index: 2;
+}
+
+.grid-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.grid-item:hover .grid-overlay {
+  opacity: 1;
+}

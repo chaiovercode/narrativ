@@ -1,0 +1,245 @@
+/* =============================================================================
+   TRENDING TOPICS
+   ============================================================================= */
+
+.trending-section {
+  margin-top: 0.5rem;
+}
+
+.trending-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.trending-reset-btn {
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.trending-reset-btn:hover {
+  background: rgba(243, 139, 168, 0.1);
+  border-color: #f38ba8;
+  color: #f38ba8;
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.category-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.category-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.category-chip.active {
+  background: var(--accent-primary);
+  color: #1e2030;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px rgba(198, 160, 246, 0.3);
+}
+
+/* Custom topic chips styled differently */
+.category-chip.custom {
+  background: rgba(137, 180, 250, 0.1);
+  border-color: rgba(137, 180, 250, 0.3);
+  color: #89b4fa;
+}
+
+.category-chip.custom:hover {
+  background: rgba(137, 180, 250, 0.2);
+  border-color: rgba(137, 180, 250, 0.5);
+}
+
+.category-chip.custom.active {
+  background: #89b4fa;
+  color: #1e2030;
+  border-color: #89b4fa;
+  box-shadow: 0 0 12px rgba(137, 180, 250, 0.3);
+}
+
+.category-chip .remove-chip {
+  margin-left: 0.25rem;
+  opacity: 0.6;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.category-chip .remove-chip:hover {
+  opacity: 1;
+}
+
+.suggestions-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1rem 0;
+}
+
+.loading-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  animation: loadingPulse 1s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.topics-error {
+  color: #f38ba8;
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background: rgba(243, 139, 168, 0.1);
+  border-radius: 2px;
+}
+
+.topic-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  position: relative;
+  z-index: 10;
+}
+
+.topic-suggestion {
+  text-align: left;
+  padding: 0.65rem 0.875rem;
+  background: rgba(198, 160, 246, 0.05);
+  border: 1px solid rgba(198, 160, 246, 0.15);
+  border-radius: 2px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.4;
+  position: relative;
+  z-index: 11;
+  pointer-events: auto;
+}
+
+.topic-suggestion:hover {
+  background: rgba(198, 160, 246, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px rgba(198, 160, 246, 0.2);
+}
+
+.topic-suggestion.selected {
+  background: rgba(198, 160, 246, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px rgba(198, 160, 246, 0.3);
+  color: var(--accent-primary);
+}
+
+.apply-suggestion-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: 2px;
+  color: #1e2030;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 0 15px rgba(198, 160, 246, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.apply-suggestion-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 0 20px rgba(198, 160, 246, 0.5), 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.apply-suggestion-btn.disabled,
+.apply-suggestion-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Custom topic input */
+.custom-topic-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.custom-topic-input input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.custom-topic-input input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.custom-topic-input input::placeholder {
+  color: var(--text-muted);
+}
+
+.custom-topic-input button {
+  padding: 0.5rem 0.75rem;
+  background: rgba(137, 180, 250, 0.15);
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  border-radius: 2px;
+  color: #89b4fa;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-topic-input button:hover:not(:disabled) {
+  background: rgba(137, 180, 250, 0.25);
+  border-color: rgba(137, 180, 250, 0.5);
+}
+
+.custom-topic-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

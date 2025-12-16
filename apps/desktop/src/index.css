@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.cdnfonts.com/css/futura-std-4');
+
+:root {
+  --bg-primary: #11111b;
+  --bg-secondary: #1e2030;
+  --bg-card: #181926;
+  --bg-elevated: #363a4f;
+
+  /* Catppuccin Macchiato Mauve accent */
+  --accent-primary: #c6a0f6;
+  --accent-hover: #b7bdf8;
+  --accent-muted: rgba(198, 160, 246, 0.1);
+
+  --text-primary: #cad3f5;
+  --text-secondary: #b8c0e0;
+  --text-muted: #6e738d;
+
+  --border-subtle: rgba(202, 211, 245, 0.08);
+  --border-medium: rgba(202, 211, 245, 0.12);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7);
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+::selection {
+  background: rgba(198, 160, 246, 0.3);
+  color: #cad3f5;
+}

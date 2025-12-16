@@ -1,0 +1,237 @@
+/* =============================================================================
+   BOARDS (Pinterest Style)
+   ============================================================================= */
+
+.boards-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.boards-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1rem;
+}
+
+.board-tab {
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.board-tab:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.board-tab.active {
+  color: #1e2030;
+  background: #c6a0f6;
+  font-weight: 600;
+}
+
+.tab-count {
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.4;
+}
+
+.empty-state h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+}
+
+/* Boards Grid */
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+.board-card {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.board-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Delete buttons */
+.card-delete-btn {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  transition: all 0.15s;
+  z-index: 10;
+}
+
+.board-card:hover .card-delete-btn,
+.research-board-card:hover .card-delete-btn {
+  opacity: 1;
+}
+
+.card-delete-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: #ef4444;
+  transition: all 0.15s;
+}
+
+.delete-btn:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.board-stack-preview {
+  position: relative;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.board-stack-preview .stack-img {
+  position: absolute;
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.board-stack-preview .stack-0 {
+  transform: rotate(-8deg) translateX(-20px);
+  z-index: 1;
+}
+
+.board-stack-preview .stack-1 {
+  transform: rotate(0deg);
+  z-index: 2;
+}
+
+.board-stack-preview .stack-2 {
+  transform: rotate(8deg) translateX(20px);
+  z-index: 3;
+}
+
+.board-card:hover .stack-0 {
+  transform: rotate(-12deg) translateX(-30px) scale(1.02);
+}
+
+.board-card:hover .stack-1 {
+  transform: rotate(0deg) scale(1.05);
+}
+
+.board-card:hover .stack-2 {
+  transform: rotate(12deg) translateX(30px) scale(1.02);
+}
+
+.board-info {
+  padding: 1.25rem;
+}
+
+.board-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-info p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Board Detail View */
+.board-detail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.board-detail-header h2 {
+  flex: 1;
+  font-size: 1.5rem;
+}
+
+.board-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.board-detail-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+}

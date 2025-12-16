@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1765871467563,
+    "topic": "OpenAI's latest AI models revealed",
+    "images": [
+      "http://localhost:8000/images/OpenAI_s latest AI m_20251216_131548/OpenAI_s latest AI models reve_20251216_131548_slide1.png",
+      "http://localhost:8000/images/OpenAI_s latest AI m_20251216_131548/OpenAI_s latest AI models reve_20251216_131548_slide2.png",
+      "http://localhost:8000/images/OpenAI_s latest AI m_20251216_131548/OpenAI_s latest AI models reve_20251216_131548_slide3.png",
+      "http://localhost:8000/images/OpenAI_s latest AI m_20251216_131548/OpenAI_s latest AI models reve_20251216_131548_slide4.png",
+      "http://localhost:8000/images/OpenAI_s latest AI m_20251216_131548/OpenAI_s latest AI models reve_20251216_131548_slide5.png"
+    ],
+    "slides": [
+      {
+        "slide_number": 1,
+        "title": "GPT-5 Family Arrives",
+        "key_fact": "OpenAI launched its flagship GPT-5 family and first 'open-weight' models, marking a significant expansion in 2025.",
+        "visual_description": "A futuristic cityscape at night, with glowing neon lines representing data streams flowing from OpenAI's logo. Above the cityscape, a stylized galaxy with prominent stars representing new model families.",
+        "mood": "exciting"
+      },
+      {
+        "slide_number": 2,
+        "title": "Pro-Level Scientific AI",
+        "key_fact": "GPT-5.2 Pro, released Dec 2025, excels in science & math, scoring 93.2% on GPQA Diamond benchmark.",
+        "visual_description": "A close-up of a complex molecular structure rendered in holographic 3D, glowing against a dark background. Mathematical equations and scientific symbols subtly animate around it. A subtle overlay of the GPQA Diamond benchmark logo.",
+        "mood": "impressive"
+      },
+      {
+        "slide_number": 3,
+        "title": "Open Source AI Strategy",
+        "key_fact": "OpenAI's gpt-oss models (August 2025) offer open-weight AI for data centers and local laptops.",
+        "visual_description": "Split screen: Left side shows a massive, futuristic data center with glowing server racks. Right side shows a person comfortably using a sleek laptop in a cozy home office environment, with data visualizations on screen.",
+        "mood": "empowering"
+      },
+      {
+        "slide_number": 4,
+        "title": "AI Thinks With Images",
+        "key_fact": "Early 2025's o3 & o4-mini pioneered 'thinking with images,' setting new visual math and science benchmarks.",
+        "visual_description": "A vibrant, abstract artwork where geometric shapes and mathematical graphs morph seamlessly into visual representations of scientific concepts like DNA strands and celestial bodies. The shapes are fluid and interconnected.",
+        "mood": "innovative"
+      },
+      {
+        "slide_number": 5,
+        "title": "Future AI Promises",
+        "key_fact": "Upcoming 'Garlic' model is in testing, reportedly outperforming Gemini 3 in critical reasoning and coding.",
+        "visual_description": "A shadowy, almost ethereal figure of a robot or AI interface silhouetted against a bright, abstract digital landscape. Overlayed are fragments of code and complex logic diagrams, pulsing with energy. A faint Google Gemini 3 logo is subtly faded in the background.",
+        "mood": "intriguing"
+      }
+    ],
+    "caption": "OpenAI just dropped a bombshell with GPT-5 family and their first 'open-weight' models! \ud83e\udd2f Imagine AI that can actually 'think with images' or ace science exams with 93.2% accuracy. What happens when AI becomes truly open and starts outperforming Gemini 3 in critical reasoning?",
+    "hashtags": [
+      "OpenAI",
+      "AITrends",
+      "FutureOfAI"
+    ],
+    "aesthetic": {
+      "art_style": "vibrant neon aesthetic with glowing elements",
+      "color_palette": "neon green #39FF14, electric blue #7DF9FF, hot pink #FF69B4, purple #9400D3",
+      "lighting": "intense neon glow against dark backgrounds",
+      "texture": "smooth glass, reflective surfaces, light trails",
+      "typography_style": "neon tube font with bright glow and reflection",
+      "background_style": "dark void with neon light sources"
+    },
+    "style_name": "Neon Glow",
+    "createdAt": "2025-12-16T07:51:07.563Z"
+  }
+]

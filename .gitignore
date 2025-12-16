@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+target/
+*.dmg
+*.app
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Tauri
+apps/desktop/src-tauri/target/
+
+# Python
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+
+# Generated content
+packages/python-backend/generated_stories/
+packages/python-backend/.cache/
+packages/python-backend/brand/logo.png
+
+# Docusaurus
+apps/docs/.docusaurus/
+apps/docs/build/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+*.local
+.turbo/

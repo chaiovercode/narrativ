@@ -1,0 +1,15 @@
+{
+  "brands": [
+    {
+      "name": "ChaiOverCode",
+      "type": "text",
+      "text": "@chaiovercode",
+      "fontSize": 24,
+      "fontColor": "#FFFFFF",
+      "position": "bottom-right",
+      "opacity": 0.7,
+      "padding": 20,
+      "id": "e480b176"
+    }
+  ]
+}

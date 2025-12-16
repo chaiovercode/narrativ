@@ -1,0 +1,213 @@
+/* =============================================================================
+   LIGHTBOX / MODAL
+   ============================================================================= */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+  padding: 2rem;
+}
+
+.lightbox-content {
+  display: flex;
+  gap: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  height: 90vh;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-subtle);
+}
+
+.lightbox-image-container {
+  flex: 1;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.lightbox-details {
+  width: 400px;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-secondary);
+}
+
+.lightbox-details h2 {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.lightbox-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+/* Caption Section */
+.caption-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.caption-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.caption-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Hashtags Section */
+.hashtags-section {
+  margin-top: -0.5rem;
+}
+
+.hashtags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hashtag {
+  background: rgba(198, 160, 246, 0.1);
+  color: var(--accent-primary);
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Lightbox Actions */
+.lightbox-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.lightbox-actions .overlay-btn {
+  flex: 1;
+  text-align: center;
+}
+
+/* Lightbox Navigation */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  z-index: 1001;
+}
+
+.lightbox-nav:hover {
+  background: var(--accent-primary);
+  color: #1e2030;
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(198, 160, 246, 0.3);
+}
+
+.lightbox-prev { left: 40px; }
+.lightbox-next { right: 40px; }
+
+/* =============================================================================
+   CONFIRM MODAL
+   ============================================================================= */
+
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.confirm-modal {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.confirm-modal p {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.confirm-modal-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.confirm-modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.confirm-modal-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.confirm-modal-btn.confirm {
+  background: #ef4444;
+  color: white;
+}
+
+.confirm-modal-btn.confirm:hover {
+  background: #dc2626;
+}
