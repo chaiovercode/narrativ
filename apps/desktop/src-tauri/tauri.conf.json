@@ -65,7 +65,7 @@
         "providerShortName": null,
         "entitlements": null
       },
-      "resources": []
+      "resources": ["resources/revelio-backend"]
     },
     "security": {
       "csp": null

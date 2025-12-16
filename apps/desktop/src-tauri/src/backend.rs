@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
@@ -20,7 +21,36 @@ impl BackendManager {
         self.port
     }
 
-    /// Start the Python backend process
+    /// Find the bundled backend executable
+    fn find_bundled_backend() -> Option<PathBuf> {
+        // In production: look for bundled executable in Resources
+        if let Ok(exe_path) = std::env::current_exe() {
+            // macOS app bundle: .app/Contents/MacOS/app -> .app/Contents/Resources/
+            if let Some(parent) = exe_path.parent() {
+                let resources = parent.join("../Resources/revelio-backend");
+                if resources.exists() {
+                    return Some(resources);
+                }
+            }
+        }
+
+        // Development: look in src-tauri/resources
+        let dev_paths = vec![
+            PathBuf::from("resources/revelio-backend"),
+            PathBuf::from("src-tauri/resources/revelio-backend"),
+            PathBuf::from("../resources/revelio-backend"),
+        ];
+
+        for path in dev_paths {
+            if path.exists() {
+                return Some(path);
+            }
+        }
+
+        None
+    }
+
+    /// Start the backend process (bundled or Python fallback for dev)
     pub fn start(&self, python_backend_path: &str) -> Result<(), String> {
         // Check if already running
         {
@@ -38,19 +68,33 @@ impl BackendManager {
         let fal_key = keychain::retrieve_api_key("fal_api_key")?
             .unwrap_or_default();
 
-        // Build the command
-        let main_py = format!("{}/main.py", python_backend_path);
-
-        let child = Command::new("python3")
-            .arg(&main_py)
-            .env("REVELIO_PORT", self.port.to_string())
-            .env("GOOGLE_API_KEY", google_key)
-            .env("TAVILY_API_KEY", tavily_key)
-            .env("FAL_KEY", fal_key)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("Failed to start backend: {}", e))?;
+        // Try bundled executable first, then fall back to Python for development
+        let child = if let Some(bundled_path) = Self::find_bundled_backend() {
+            println!("Using bundled backend: {:?}", bundled_path);
+            Command::new(&bundled_path)
+                .env("REVELIO_PORT", self.port.to_string())
+                .env("GOOGLE_API_KEY", &google_key)
+                .env("TAVILY_API_KEY", &tavily_key)
+                .env("FAL_KEY", &fal_key)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|e| format!("Failed to start bundled backend: {}", e))?
+        } else {
+            // Fallback to Python for development
+            println!("Using Python backend at: {:?}", python_backend_path);
+            let main_py = format!("{}/main.py", python_backend_path);
+            Command::new("python3")
+                .arg(&main_py)
+                .env("REVELIO_PORT", self.port.to_string())
+                .env("GOOGLE_API_KEY", &google_key)
+                .env("TAVILY_API_KEY", &tavily_key)
+                .env("FAL_KEY", &fal_key)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|e| format!("Failed to start Python backend: {}", e))?
+        };
 
         *self.process.lock().map_err(|e| e.to_string())? = Some(child);
 

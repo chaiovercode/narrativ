@@ -11,16 +11,13 @@ use std::sync::Mutex;
 use std::path::PathBuf;
 use tauri::Manager;
 
-fn find_python_backend() -> Option<PathBuf> {
-    // Try multiple locations for the Python backend
+/// Find Python backend for development fallback (when bundled executable isn't available)
+fn find_python_backend_for_dev() -> Option<PathBuf> {
     let possible_paths = vec![
-        // Development: relative to the project
+        // Development: relative to the project root
         std::env::current_dir().ok()?.join("../../packages/python-backend"),
         std::env::current_dir().ok()?.join("../../../packages/python-backend"),
-        // From home directory (common dev location)
-        dirs::home_dir()?.join("Code/revelio/packages/python-backend"),
-        // Bundled in app resources (for production)
-        std::env::current_exe().ok()?.parent()?.join("../Resources/python-backend"),
+        std::env::current_dir().ok()?.join("packages/python-backend"),
     ];
 
     for path in possible_paths {
@@ -67,20 +64,17 @@ fn main() {
         .setup(|app| {
             println!("Revelio is starting...");
 
-            // Auto-start the Python backend
-            if let Some(backend_path) = find_python_backend() {
-                println!("Found Python backend at: {:?}", backend_path);
+            // Start backend - will use bundled executable if available, Python fallback for dev
+            let backend_path = find_python_backend_for_dev()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_default();
 
-                let backend_manager = app.state::<Mutex<BackendManager>>();
-                let result = backend_manager.lock();
-                if let Ok(manager) = result {
-                    match manager.start(backend_path.to_str().unwrap_or("")) {
-                        Ok(_) => println!("Backend started successfully on port 8000"),
-                        Err(e) => println!("Failed to start backend: {}", e),
-                    }
+            let backend_manager = app.state::<Mutex<BackendManager>>();
+            if let Ok(manager) = backend_manager.lock() {
+                match manager.start(&backend_path) {
+                    Ok(_) => println!("Backend started successfully on port 8000"),
+                    Err(e) => println!("Failed to start backend: {}", e),
                 }
-            } else {
-                println!("Warning: Python backend not found. Please start it manually.");
             }
 
             Ok(())

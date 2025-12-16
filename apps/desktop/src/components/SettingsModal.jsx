@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
-import { readBinaryFile, writeBinaryFile, createDir, exists } from '@tauri-apps/api/fs';
+import { readBinaryFile } from '@tauri-apps/api/fs';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import '../styles/settings-modal.css';
 
@@ -55,7 +55,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
   // Brands state (multiple brands)
   const [brands, setBrands] = useState([]);
   const [editingBrand, setEditingBrand] = useState(null);
-  const [newBrandName, setNewBrandName] = useState('');
   const [brandSaving, setBrandSaving] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
 
@@ -99,56 +98,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
       } catch (err) {
         console.error('Failed to reveal vault:', err);
       }
-    }
-  };
-
-  const handleChangeVault = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: 'Select a vault folder',
-      });
-
-      if (selected) {
-        const isValid = await invoke('validate_vault', { path: selected });
-        if (isValid) {
-          await invoke('set_vault_path', { path: selected });
-        } else {
-          await invoke('create_vault', { path: selected });
-        }
-        setVaultPath(selected);
-
-        try {
-          await fetch('http://localhost:8000/vault/set', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: selected }),
-          });
-        } catch (err) {
-          console.warn('Failed to notify backend:', err);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to change vault:', err);
-    }
-  };
-
-  const handleResetVault = async () => {
-    if (!confirm('Are you sure you want to reset your vault? You will need to select or create a new vault.')) {
-      return;
-    }
-
-    try {
-      await invoke('clear_vault_path');
-      setVaultPath(null);
-      onClose();
-      if (onResetVault) {
-        onResetVault();
-      }
-    } catch (err) {
-      console.error('Failed to reset vault:', err);
-      alert(`Failed to reset vault: ${err}`);
     }
   };
 
@@ -443,7 +392,8 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                   className="btn-secondary"
                   onClick={async () => {
                     try {
-                      await invoke('restart_backend', { pythonBackendPath: '/Users/vivek/Code/revelio/packages/python-backend' });
+                      const backendPath = await invoke('get_python_backend_path');
+                      await invoke('restart_backend', { pythonBackendPath: backendPath || '' });
                       alert('Backend restarted successfully');
                     } catch (err) {
                       console.error('Failed to restart backend:', err);

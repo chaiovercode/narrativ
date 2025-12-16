@@ -8,8 +8,6 @@ import NotesPanel from './components/notes/NotesPanel';
 import StatusBar from './components/StatusBar';
 import { setVaultPath as setBackendVaultPath } from './services/api';
 import './App.css';
-import './styles/vault-setup.css';
-import './styles/notes-panel.css';
 import './styles/status-bar.css';
 
 // Obsidian-style icons

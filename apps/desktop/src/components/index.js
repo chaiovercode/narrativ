@@ -10,5 +10,3 @@ export { StyleSelector } from './StyleSelector';
 export { StyleExtractor } from './StyleExtractor';
 export { CollapsibleSection } from './CollapsibleSection';
 export { ConfirmModal } from './ConfirmModal';
-export { Navbar } from './Navbar';
-export { Footer } from './Footer';

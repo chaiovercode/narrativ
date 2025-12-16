@@ -80,13 +80,6 @@ export async function setVaultPath(path) {
   return data;
 }
 
-export async function getVaultInfo() {
-  const response = await fetch(`${API_BASE}/vault`);
-  if (!response.ok) throw new Error('Failed to get vault info');
-  const data = await response.json();
-  return data;
-}
-
 // =============================================================================
 // Notes
 // =============================================================================
@@ -96,12 +89,6 @@ export async function fetchNotes() {
   if (!response.ok) throw new Error('Failed to fetch notes');
   const data = await response.json();
   return data.notes;
-}
-
-export async function fetchNote(id) {
-  const response = await fetch(`${API_BASE}/notes/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch note');
-  return await response.json();
 }
 
 export async function saveNoteApi(note) {

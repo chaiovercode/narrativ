@@ -1,101 +1,129 @@
-#[cfg(not(debug_assertions))]
-use security_framework::passwords::{
-    delete_generic_password, get_generic_password, set_generic_password,
+use aes_gcm::{
+    aead::{Aead, KeyInit},
+    Aes256Gcm, Nonce,
 };
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-#[cfg(not(debug_assertions))]
-const SERVICE_NAME: &str = "com.revelio.app";
+const NONCE_SIZE: usize = 12;
+const APP_SALT: &[u8] = b"revelio_secrets_v1";
 
-#[cfg(debug_assertions)]
-fn get_dev_secrets_path() -> PathBuf {
-    let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push(".revelio");
+/// Derive encryption key from machine ID
+fn get_encryption_key() -> [u8; 32] {
+    let machine_id = machine_uid::get().unwrap_or_else(|_| "fallback_id".to_string());
+    let mut hasher = Sha256::new();
+    hasher.update(machine_id.as_bytes());
+    hasher.update(APP_SALT);
+    hasher.finalize().into()
+}
+
+/// Encrypt data using AES-256-GCM
+fn encrypt(plaintext: &str) -> Result<String, String> {
+    let key = get_encryption_key();
+    let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
+
+    // Generate random nonce
+    let nonce_bytes: [u8; NONCE_SIZE] = rand_nonce();
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_bytes())
+        .map_err(|e| e.to_string())?;
+
+    // Prepend nonce to ciphertext and encode as base64
+    let mut combined = nonce_bytes.to_vec();
+    combined.extend(ciphertext);
+    Ok(BASE64.encode(combined))
+}
+
+/// Decrypt data using AES-256-GCM
+fn decrypt(encrypted: &str) -> Result<String, String> {
+    let key = get_encryption_key();
+    let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
+
+    let combined = BASE64.decode(encrypted).map_err(|e| e.to_string())?;
+
+    if combined.len() < NONCE_SIZE {
+        return Err("Invalid encrypted data".to_string());
+    }
+
+    let (nonce_bytes, ciphertext) = combined.split_at(NONCE_SIZE);
+    let nonce = Nonce::from_slice(nonce_bytes);
+
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|_| "Decryption failed".to_string())?;
+
+    String::from_utf8(plaintext).map_err(|e| e.to_string())
+}
+
+/// Generate random nonce
+fn rand_nonce() -> [u8; NONCE_SIZE] {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let mut nonce = [0u8; NONCE_SIZE];
+    for (i, byte) in nonce.iter_mut().enumerate() {
+        *byte = ((now >> (i * 8)) & 0xff) as u8;
+    }
+    nonce
+}
+
+/// Get the secrets file path in the app data directory
+fn get_secrets_path() -> PathBuf {
+    let mut path = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
+    path.push("com.revelio.app");
     if !path.exists() {
         let _ = fs::create_dir_all(&path);
     }
-    path.push("dev_secrets.json");
+    path.push("secrets.enc");
     path
 }
 
-#[cfg(debug_assertions)]
-fn read_dev_secrets() -> HashMap<String, String> {
-    let path = get_dev_secrets_path();
+/// Read and decrypt secrets from file
+fn read_secrets() -> HashMap<String, String> {
+    let path = get_secrets_path();
     if path.exists() {
-        let content = fs::read_to_string(path).unwrap_or_else(|_| "{}".to_string());
-        serde_json::from_str(&content).unwrap_or_default()
-    } else {
-        HashMap::new()
+        if let Ok(encrypted) = fs::read_to_string(&path) {
+            if let Ok(decrypted) = decrypt(&encrypted) {
+                return serde_json::from_str(&decrypted).unwrap_or_default();
+            }
+        }
     }
+    HashMap::new()
 }
 
-#[cfg(debug_assertions)]
-fn write_dev_secrets(secrets: &HashMap<String, String>) -> Result<(), String> {
-    let path = get_dev_secrets_path();
-    let content = serde_json::to_string_pretty(secrets).map_err(|e| e.to_string())?;
-    fs::write(path, content).map_err(|e| e.to_string())
+/// Encrypt and write secrets to file
+fn write_secrets(secrets: &HashMap<String, String>) -> Result<(), String> {
+    let path = get_secrets_path();
+    let json = serde_json::to_string_pretty(secrets).map_err(|e| e.to_string())?;
+    let encrypted = encrypt(&json)?;
+    fs::write(&path, encrypted).map_err(|e| e.to_string())
 }
 
 /// Store an API key
 pub fn store_api_key(key_name: &str, key_value: &str) -> Result<(), String> {
-    #[cfg(debug_assertions)]
-    {
-        let mut secrets = read_dev_secrets();
-        secrets.insert(key_name.to_string(), key_value.to_string());
-        write_dev_secrets(&secrets)
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        // First try to delete any existing key
-        let _ = delete_generic_password(SERVICE_NAME, key_name);
-        set_generic_password(SERVICE_NAME, key_name, key_value.as_bytes())
-            .map_err(|e| format!("Failed to store API key in Keychain: {}", e))
-    }
+    let mut secrets = read_secrets();
+    secrets.insert(key_name.to_string(), key_value.to_string());
+    write_secrets(&secrets)
 }
 
 /// Retrieve an API key
 pub fn retrieve_api_key(key_name: &str) -> Result<Option<String>, String> {
-    #[cfg(debug_assertions)]
-    {
-        let secrets = read_dev_secrets();
-        Ok(secrets.get(key_name).cloned())
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        match get_generic_password(SERVICE_NAME, key_name) {
-            Ok(password) => String::from_utf8(password)
-                .map(Some)
-                .map_err(|e| format!("Failed to decode API key: {}", e)),
-            Err(e) => {
-                // If key not found, return None instead of error
-                if e.to_string().contains("not found") || e.to_string().contains("SecItemNotFound") {
-                    Ok(None)
-                } else {
-                    Err(format!("Failed to retrieve API key from Keychain: {}", e))
-                }
-            }
-        }
-    }
+    let secrets = read_secrets();
+    Ok(secrets.get(key_name).cloned())
 }
 
 /// Delete an API key
 pub fn delete_api_key(key_name: &str) -> Result<(), String> {
-    #[cfg(debug_assertions)]
-    {
-        let mut secrets = read_dev_secrets();
-        secrets.remove(key_name);
-        write_dev_secrets(&secrets)
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        delete_generic_password(SERVICE_NAME, key_name)
-            .map_err(|e| format!("Failed to delete API key from Keychain: {}", e))
-    }
+    let mut secrets = read_secrets();
+    secrets.remove(key_name);
+    write_secrets(&secrets)
 }
 
 /// Get all stored API key names (for UI display)
