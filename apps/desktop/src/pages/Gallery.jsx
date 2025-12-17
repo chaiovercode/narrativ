@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { fetchImages, deleteImages } from '../services/api';
+import { fetchImages, deleteImages, updateImages } from '../services/api';
 import { ConfirmModal } from '../components/ConfirmModal';
 import '../App.css';
 
@@ -10,7 +10,7 @@ function Gallery() {
   const [loading, setLoading] = useState(true);
   const [selectedStory, setSelectedStory] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null, imageIndex: null });
 
   useEffect(() => {
     loadImages();
@@ -28,17 +28,59 @@ function Gallery() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await deleteImages(id);
-      setImageBoards(prev => prev.filter(b => b.id !== id));
-      if (selectedStory?.id === id) {
-        setSelectedStory(null);
+  const handleConfirmDelete = async () => {
+    const { type, id, imageIndex } = confirmModal;
+
+    if (type === 'board') {
+      try {
+        await deleteImages(id);
+        setImageBoards(prev => prev.filter(b => b.id !== id));
+        if (selectedStory?.id === id) {
+          setSelectedStory(null);
+        }
+      } catch (err) {
+        console.error('Failed to delete:', err);
       }
-    } catch (err) {
-      console.error('Failed to delete:', err);
+    } else if (type === 'single-image') {
+      try {
+        const board = imageBoards.find(b => b.id === id);
+        if (!board) return;
+
+        const newImages = [...board.images];
+        newImages.splice(imageIndex, 1);
+
+        // If no images left, delete the whole board
+        if (newImages.length === 0) {
+          await deleteImages(id);
+          setImageBoards(prev => prev.filter(b => b.id !== id));
+          setSelectedStory(null);
+        } else {
+          // Update the board with remaining images
+          const updatedBoard = {
+            ...board,
+            images: newImages,
+            updatedAt: new Date().toISOString()
+          };
+          await updateImages(id, updatedBoard);
+          setImageBoards(prev => prev.map(b => b.id === id ? updatedBoard : b));
+          setSelectedStory(updatedBoard);
+        }
+      } catch (err) {
+        console.error('Failed to delete image:', err);
+      }
     }
-    setConfirmModal({ isOpen: false, id: null });
+
+    setConfirmModal({ isOpen: false, type: null, id: null, imageIndex: null });
+  };
+
+  const handleDownloadSingle = async (imageUrl, index) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      saveAs(blob, `slide_${index + 1}.png`);
+    } catch (err) {
+      console.error('Download failed:', err);
+    }
   };
 
   const handleDownloadAll = async (images, topicName) => {
@@ -67,6 +109,12 @@ function Gallery() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const getConfirmMessage = () => {
+    if (confirmModal.type === 'board') return 'Delete this entire story? This cannot be undone.';
+    if (confirmModal.type === 'single-image') return 'Delete this image?';
+    return 'Are you sure?';
   };
 
   // Empty state
@@ -113,7 +161,7 @@ function Gallery() {
               </button>
               <button
                 className="action-btn delete"
-                onClick={() => setConfirmModal({ isOpen: true, id: selectedStory.id })}
+                onClick={() => setConfirmModal({ isOpen: true, type: 'board', id: selectedStory.id, imageIndex: null })}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -129,6 +177,24 @@ function Gallery() {
                 <div className="image-overlay">
                   <span className="slide-label">Slide {idx + 1}</span>
                 </div>
+                <button
+                  className="grid-download-btn"
+                  onClick={(e) => { e.stopPropagation(); handleDownloadSingle(img, idx); }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2v8m0 0l-3-3m3 3l3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {selectedStory.images.length > 1 && (
+                  <button
+                    className="grid-delete-btn"
+                    onClick={(e) => { e.stopPropagation(); setConfirmModal({ isOpen: true, type: 'single-image', id: selectedStory.id, imageIndex: idx }); }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -184,9 +250,9 @@ function Gallery() {
 
         <ConfirmModal
           isOpen={confirmModal.isOpen}
-          message="Delete this story? This cannot be undone."
-          onConfirm={() => handleDelete(confirmModal.id)}
-          onCancel={() => setConfirmModal({ isOpen: false, id: null })}
+          message={getConfirmMessage()}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmModal({ isOpen: false, type: null, id: null, imageIndex: null })}
         />
       </div>
     );
@@ -243,9 +309,9 @@ function Gallery() {
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        message="Delete this story? This cannot be undone."
-        onConfirm={() => handleDelete(confirmModal.id)}
-        onCancel={() => setConfirmModal({ isOpen: false, id: null })}
+        message={getConfirmMessage()}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmModal({ isOpen: false, type: null, id: null, imageIndex: null })}
       />
     </div>
   );

@@ -368,6 +368,7 @@
   cursor: pointer;
   aspect-ratio: 9/16;
   background: var(--bg-overlay);
+  padding: var(--space-sm);
 }
 
 .detail-image img {
@@ -375,10 +376,23 @@
   height: 100%;
   object-fit: cover;
   transition: transform var(--transition-normal);
+  border-radius: var(--radius-md);
 }
 
 .detail-image:hover img {
-  transform: scale(1.05);
+  transform: scale(1.02);
+}
+
+.detail-image .grid-download-btn,
+.detail-image .grid-delete-btn {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.detail-image:hover .grid-download-btn,
+.detail-image:hover .grid-delete-btn {
+  opacity: 1;
+  visibility: visible;
 }
 
 .image-overlay {

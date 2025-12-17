@@ -42,7 +42,29 @@ function Create({ openResearchTopic, onResearchOpened }) {
         addImageBoard,
         updateImageBoard,
         deleteImageBoard,
+        refreshBoards,
     } = useBoards();
+
+    // Refresh boards on mount and when window gains focus
+    useEffect(() => {
+        // Refresh on mount to ensure latest data
+        refreshBoards();
+
+        const handleFocus = () => refreshBoards();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                refreshBoards();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [refreshBoards]);
 
     const [activeTab, setActiveTab] = useState('research');
     const [selectedBoard, setSelectedBoard] = useState(null);
