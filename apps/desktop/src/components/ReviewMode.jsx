@@ -1,16 +1,80 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function ReviewMode({
   storyPlan,
   selectedStyle,
   onEditAesthetic,
-  onEditSlide,
   onEditCaption,
-  onConfirmPlan
+  onConfirmPlan,
+  onSaveResearch,
+  onBack
 }) {
   const [stage, setStage] = useState('scenes'); // 'scenes' or 'review'
 
-  if (!storyPlan || !storyPlan.slides) return null;
+  // Track which slides are selected for generation (all selected by default)
+  const [selectedSlides, setSelectedSlides] = useState(() => {
+    if (storyPlan?.slides) {
+      return storyPlan.slides.map(s => s.slide_number);
+    }
+    return [];
+  });
+
+  // Update selectedSlides when storyPlan changes
+  useEffect(() => {
+    if (storyPlan?.slides) {
+      setSelectedSlides(storyPlan.slides.map(s => s.slide_number));
+    }
+  }, [storyPlan?.slides?.length]);
+
+  // Toggle slide selection
+  const toggleSlide = (slideNumber) => {
+    setSelectedSlides(prev => {
+      if (prev.includes(slideNumber)) {
+        return prev.filter(n => n !== slideNumber);
+      } else {
+        return [...prev, slideNumber].sort((a, b) => a - b);
+      }
+    });
+  };
+
+  // Select/deselect all
+  const toggleAll = () => {
+    if (selectedSlides.length === storyPlan.slides.length) {
+      setSelectedSlides([]);
+    } else {
+      setSelectedSlides(storyPlan.slides.map(s => s.slide_number));
+    }
+  };
+
+  // Handle confirm with selected slides only
+  const handleConfirmWithSelection = () => {
+    // Filter plan to only include selected slides
+    const filteredPlan = {
+      ...storyPlan,
+      slides: storyPlan.slides.filter(s => selectedSlides.includes(s.slide_number))
+    };
+    console.log('[ReviewMode] Generating with filtered plan:', {
+      selectedSlides,
+      totalSlides: storyPlan.slides.length,
+      filteredSlides: filteredPlan.slides.length
+    });
+    onConfirmPlan(filteredPlan);
+  };
+
+  // Debug logging
+  console.log('[ReviewMode] Rendering with:', {
+    hasStoryPlan: !!storyPlan,
+    hasSlides: !!storyPlan?.slides,
+    slideCount: storyPlan?.slides?.length,
+    hasSelectedStyle: !!selectedStyle,
+    selectedSlides,
+    stage
+  });
+
+  if (!storyPlan || !storyPlan.slides) {
+    console.log('[ReviewMode] Returning null - missing storyPlan or slides');
+    return null;
+  }
 
   // Extract colors from palette for display
   const extractColors = (palette) => {
@@ -20,71 +84,114 @@ export function ReviewMode({
     return palette.match(hexPattern) || [];
   };
 
-  const colors = extractColors(storyPlan.aesthetic?.color_palette);
+  // Get merged aesthetic for color extraction
+  const mergedAesthetic = selectedStyle || storyPlan.aesthetic || {};
+  const colors = extractColors(mergedAesthetic.color_palette);
 
   // Stage 1: Just show scenes
   if (stage === 'scenes') {
     return (
       <div className="review-scroll-wrapper">
         <div className="review-container">
-          <div className="review-header">
-            <h2>Review Your Scenes</h2>
-            <p>Click any field to edit before proceeding.</p>
+          {/* Header bar matching research detail layout */}
+          <div className="board-detail-header">
+            {onBack && (
+              <button className="back-btn" onClick={onBack}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Back
+              </button>
+            )}
+            <h2>Select Scenes</h2>
+            <div className="board-detail-actions">
+              <button className="btn-secondary" onClick={onSaveResearch}>
+                Save Research
+              </button>
+              <button
+                className="btn-primary"
+                onClick={() => setStage('review')}
+                disabled={selectedSlides.length === 0}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+
+          <div className="slides-selection-header">
+            <label className="select-all-toggle">
+              <input
+                type="checkbox"
+                checked={selectedSlides.length === storyPlan.slides.length}
+                onChange={toggleAll}
+              />
+              <span>
+                {selectedSlides.length === storyPlan.slides.length
+                  ? 'Deselect All'
+                  : `Select All (${storyPlan.slides.length})`}
+              </span>
+            </label>
+            <span className="selection-count">
+              {selectedSlides.length} of {storyPlan.slides.length} selected
+            </span>
           </div>
 
           <div className="slides-preview">
-            {storyPlan.slides.map((slide, index) => (
-              <div key={slide.slide_number} className="slide-row">
+            {storyPlan.slides.map((slide) => (
+              <div
+                key={slide.slide_number}
+                className={`slide-row ${selectedSlides.includes(slide.slide_number) ? 'selected' : 'deselected'}`}
+              >
+                <div className="slide-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedSlides.includes(slide.slide_number)}
+                    onChange={() => toggleSlide(slide.slide_number)}
+                  />
+                </div>
                 <div className="slide-number">{slide.slide_number}</div>
                 <div className="slide-content-preview">
-                  <h4
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => onEditSlide(index, 'title', e.target.innerText)}
-                    className="editable-field"
-                  >
-                    {slide.title}
-                  </h4>
+                  <h4>{slide.title}</h4>
                   <label className="field-label">Key Fact</label>
-                  <p
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => onEditSlide(index, 'key_fact', e.target.innerText)}
-                    className="editable-field"
-                  >
-                    {slide.key_fact}
-                  </p>
+                  <p>{slide.key_fact}</p>
                   <label className="field-label">Visual Description</label>
-                  <p
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => onEditSlide(index, 'visual_description', e.target.innerText)}
-                    className="editable-field visual-desc"
-                  >
-                    {slide.visual_description}
-                  </p>
+                  <p className="visual-desc">{slide.visual_description}</p>
                 </div>
               </div>
             ))}
-          </div>
-
-          <div className="action-buttons">
-            <button className="btn-primary" onClick={() => setStage('review')}>
-              Conjure Visuals
-            </button>
           </div>
         </div>
       </div>
     );
   }
 
+  // Get aesthetic - prefer selectedStyle, then storyPlan.aesthetic
+  const aesthetic = selectedStyle || storyPlan.aesthetic || {};
+
   // Stage 2: Full review with Visual Charm, Caption, etc.
+  console.log('[ReviewMode] Rendering review stage with aesthetic:', aesthetic);
+
   return (
     <div className="review-scroll-wrapper">
       <div className="review-container">
-        <div className="review-header">
-          <h2>Final Review</h2>
-          <p>Review your visual style and caption before generating.</p>
+        {/* Header bar matching research detail layout */}
+        <div className="board-detail-header">
+          <button className="back-btn" onClick={() => setStage('scenes')}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Back
+          </button>
+          <h2>Review Style</h2>
+          <div className="board-detail-actions">
+            <button
+              className="btn-primary"
+              onClick={handleConfirmWithSelection}
+              disabled={selectedSlides.length === 0}
+            >
+              Generate {selectedSlides.length} Image{selectedSlides.length !== 1 ? 's' : ''}
+            </button>
+          </div>
         </div>
 
         <h3 className="section-title">Visual Charm</h3>
@@ -114,7 +221,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('art_style', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.art_style}
+                {aesthetic.art_style || 'Not specified'}
               </p>
             </div>
             <div className="style-item">
@@ -125,7 +232,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('color_palette', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.color_palette}
+                {aesthetic.color_palette || 'Not specified'}
               </p>
             </div>
             <div className="style-item">
@@ -136,7 +243,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('lighting', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.lighting}
+                {aesthetic.lighting || 'Not specified'}
               </p>
             </div>
             <div className="style-item">
@@ -147,7 +254,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('texture', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.texture}
+                {aesthetic.texture || 'Not specified'}
               </p>
             </div>
             <div className="style-item">
@@ -158,7 +265,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('typography_style', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.typography_style}
+                {aesthetic.typography_style || 'Not specified'}
               </p>
             </div>
             <div className="style-item">
@@ -169,7 +276,7 @@ export function ReviewMode({
                 onBlur={(e) => onEditAesthetic('background_style', e.target.innerText)}
                 className="editable-field"
               >
-                {storyPlan.aesthetic?.background_style}
+                {aesthetic.background_style || 'Not specified'}
               </p>
             </div>
           </div>
@@ -218,14 +325,6 @@ export function ReviewMode({
           </div>
         )}
 
-        <div className="action-buttons">
-          <button className="btn-secondary" onClick={() => setStage('scenes')}>
-            ← Back to Scenes
-          </button>
-          <button className="btn-primary" onClick={onConfirmPlan}>
-            Generate Images
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -192,6 +192,22 @@ function Gallery() {
     );
   }
 
+  // Loading state - show full page loader with bouncy dots
+  if (loading) {
+    return (
+      <div className="gallery-page">
+        <div className="loading-fun">
+          <div className="loading-dots">
+            <div className="loading-dot"></div>
+            <div className="loading-dot"></div>
+            <div className="loading-dot"></div>
+          </div>
+          <p className="loading-text">Loading your stories...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Gallery grid view
   return (
     <div className="gallery-page">
@@ -200,13 +216,7 @@ function Gallery() {
         <p>{imageBoards.length} {imageBoards.length === 1 ? 'story' : 'stories'} created</p>
       </div>
 
-      {loading ? (
-        <div className="gallery-loading">
-          <div className="spinner"></div>
-          <p>Loading your stories...</p>
-        </div>
-      ) : (
-        <div className="gallery-grid">
+      <div className="gallery-grid">
           {imageBoards.map((board) => (
             <div
               key={board.id}
@@ -230,7 +240,6 @@ function Gallery() {
             </div>
           ))}
         </div>
-      )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}

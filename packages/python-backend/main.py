@@ -7,10 +7,12 @@ Designed for desktop app integration with Tauri.
 import os
 import datetime
 import traceback
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
@@ -42,14 +44,22 @@ from services import (
     delete_custom_style,
     extract_style_from_image,
 )
+from services.image import generate_story_from_plan_parallel
+from services.consistency import generate_story_characters
 from services.brand import get_brands, save_brand, delete_brand, get_brand_by_id
-from services.boards import load_boards, add_board, delete_board, set_vault_path as set_boards_vault_path
+from services.boards import load_boards, add_board, delete_board, update_board, set_vault_path as set_boards_vault_path, cleanup_orphaned_attachments, sync_attachments_with_boards
 from services.styles import set_vault_path as set_styles_vault_path
 from services.notes import (
     load_notes,
+    load_folders,
     save_note,
     delete_note as delete_note_service,
     get_note_by_id,
+    create_folder,
+    delete_folder,
+    rename_folder,
+    move_folder,
+    move_note,
     set_vault_path as set_notes_vault_path
 )
 
@@ -86,8 +96,14 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Vault path (set by Tauri app)
 VAULT_PATH = None
 
-# Serve generated images
-app.mount("/images", StaticFiles(directory=OUTPUT_DIR), name="images")
+# Dynamic image serving (supports vault path changes)
+@app.get("/images/{folder}/{filename}")
+async def serve_image(folder: str, filename: str):
+    """Serve generated images from OUTPUT_DIR (supports vault)."""
+    file_path = os.path.join(OUTPUT_DIR, folder, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Image not found")
 
 
 # =============================================================================
@@ -188,13 +204,19 @@ async def set_vault(request: VaultRequest):
     notes_dir = os.path.join(VAULT_PATH, "notes")
     os.makedirs(notes_dir, exist_ok=True)
 
+    # Sync attachments folder with image boards
+    sync_result = sync_attachments_with_boards()
+    if sync_result.get("added", 0) > 0 or sync_result.get("removed", 0) > 0:
+        print(f"[vault] Synced attachments: {sync_result.get('added', 0)} added, {sync_result.get('removed', 0)} removed")
+
     return {
         "status": "ok",
         "vault_path": VAULT_PATH,
         "attachments_dir": OUTPUT_DIR,
         "research_dir": research_dir,
         "styles_dir": styles_dir,
-        "notes_dir": notes_dir
+        "notes_dir": notes_dir,
+        "sync_result": sync_result
     }
 
 @app.get("/vault")
@@ -204,6 +226,69 @@ async def get_vault():
         "vault_path": VAULT_PATH,
         "attachments_dir": OUTPUT_DIR if VAULT_PATH else None
     }
+
+
+@app.post("/vault/cleanup")
+async def cleanup_vault():
+    """Clean up orphaned attachment folders that don't have gallery entries."""
+    if not VAULT_PATH:
+        raise HTTPException(status_code=400, detail="No vault configured")
+
+    removed_count = cleanup_orphaned_attachments()
+    return {
+        "status": "ok",
+        "orphaned_attachments_removed": removed_count
+    }
+
+
+@app.post("/vault/sync")
+async def sync_vault():
+    """
+    Comprehensive sync of all vault folders with the app.
+    - Syncs attachments folder with image boards
+    - Reloads research from markdown files
+    - Reloads notes from markdown files
+    - Reloads custom styles from JSON files
+    """
+    if not VAULT_PATH:
+        raise HTTPException(status_code=400, detail="No vault configured")
+
+    result = {
+        "status": "ok",
+        "attachments": {},
+        "research": {},
+        "notes": {},
+        "styles": {}
+    }
+
+    # Sync attachments with image boards
+    attachments_result = sync_attachments_with_boards()
+    result["attachments"] = attachments_result
+
+    # Count research files
+    research_dir = os.path.join(VAULT_PATH, "research")
+    if os.path.exists(research_dir):
+        research_files = list(Path(research_dir).glob("*.md"))
+        result["research"] = {"count": len(research_files), "path": research_dir}
+
+    # Count notes
+    notes_dir = os.path.join(VAULT_PATH, "notes")
+    if os.path.exists(notes_dir):
+        note_files = list(Path(notes_dir).glob("*.md"))
+        result["notes"] = {"count": len(note_files), "path": notes_dir}
+
+    # Count styles
+    styles_dir = os.path.join(VAULT_PATH, "styles")
+    if os.path.exists(styles_dir):
+        style_files = list(Path(styles_dir).glob("*.json"))
+        result["styles"] = {"count": len(style_files), "path": styles_dir}
+
+    print(f"[vault/sync] Synced: {result['attachments'].get('added', 0)} images added, "
+          f"{result['research'].get('count', 0)} research, "
+          f"{result['notes'].get('count', 0)} notes, "
+          f"{result['styles'].get('count', 0)} styles")
+
+    return result
 
 
 @app.get("/rss_topics")
@@ -350,6 +435,55 @@ async def plan_story(request: StoryRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class AddSlidesRequest(BaseModel):
+    topic: str
+    existing_slides: list
+    additional_count: int
+    aesthetic: dict = None
+
+
+@app.post("/add_slides")
+async def add_slides(request: AddSlidesRequest):
+    """
+    Add more slides to existing research.
+    Continues from existing slides, up to max 10 total.
+    """
+    if not request.topic.strip():
+        raise HTTPException(status_code=400, detail="Topic is required")
+
+    existing_count = len(request.existing_slides)
+    if existing_count >= 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 slides reached")
+
+    max_additional = 10 - existing_count
+    additional_count = min(request.additional_count, max_additional)
+
+    if additional_count <= 0:
+        raise HTTPException(status_code=400, detail="No slides to add")
+
+    try:
+        from services.research import add_slides_to_research
+
+        result = add_slides_to_research(
+            topic=request.topic,
+            existing_slides=request.existing_slides,
+            additional_count=additional_count,
+            aesthetic=request.aesthetic
+        )
+
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to add slides")
+
+        return {
+            "slides": result['slides'],
+            "new_sources": result.get('new_sources', [])
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/plan_from_text")
 async def plan_from_text(request: TextToSlidesRequest):
     """
@@ -388,17 +522,35 @@ async def generate_from_plan(request: GenerateFromPlanRequest):
     Phase 2: Generate images from approved plan.
     Returns URLs to generated images.
     Optionally applies brand watermark if brand_id is provided.
+
+    Features:
+    - Parallel generation (3 slides at once)
+    - Character/style consistency across slides
+    - Seed-based style consistency for fal.ai
+    - Retry logic for rate limits
     """
     if not request.plan or 'topic' not in request.plan:
         raise HTTPException(status_code=400, detail="Valid plan is required")
 
     try:
         folder_name, output_path = create_story_folder(request.plan['topic'])
-        generated_files = generate_story_from_plan(
+
+        # Generate consistency data for visual coherence across slides
+        consistency_data = None
+        if len(request.plan.get('slides', [])) > 1:
+            consistency_data = generate_story_characters(
+                request.plan['topic'],
+                request.plan['slides'],
+                request.plan.get('aesthetic', {})
+            )
+
+        # Use parallel generation with consistency
+        generated_files = generate_story_from_plan_parallel(
             request.plan,
             output_dir=output_path,
             provider=request.provider,
-            brand_id=request.brand_id
+            brand_id=request.brand_id,
+            consistency_data=consistency_data
         )
 
         return {"images": files_to_urls(generated_files, folder_name)}
@@ -586,6 +738,24 @@ async def remove_board(board_type: str, board_id: int):
         return {"status": "ok", "deleted": board_id}
     except HTTPException:
         raise
+
+
+@app.put("/boards/{board_type}/{board_id}")
+async def update_board_endpoint(board_type: str, board_id: int, board: dict):
+    """
+    Update an existing board.
+    board_type: 'research' or 'images'
+    """
+    if board_type not in ['research', 'images']:
+        raise HTTPException(status_code=400, detail="board_type must be 'research' or 'images'")
+
+    try:
+        updated = update_board(board_type, board_id, board)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Board not found")
+        return {"status": "ok", "board": updated}
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -647,6 +817,101 @@ async def remove_note(note_id: str):
         return {"status": "ok", "deleted": note_id}
     except HTTPException:
         raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/notes/{note_id}/move")
+async def move_note_to_folder(note_id: str, data: dict):
+    """Move a note to a different folder."""
+    try:
+        folder = data.get('folder', '')
+        note = move_note(note_id, folder)
+        return {"status": "ok", "note": note}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# FOLDERS ENDPOINTS
+# =============================================================================
+
+@app.get("/folders")
+async def get_folders():
+    """Get all folders from the notes directory."""
+    try:
+        folders = load_folders()
+        return {"folders": folders}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/folders")
+async def create_new_folder(data: dict):
+    """Create a new folder."""
+    name = data.get('name')
+    if not name:
+        raise HTTPException(status_code=400, detail="Folder name is required")
+
+    parent = data.get('parent', '')
+
+    try:
+        folder = create_folder(name, parent)
+        return {"status": "ok", "folder": folder}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/folders/{folder_path:path}")
+async def remove_folder(folder_path: str):
+    """Delete a folder and its contents."""
+    try:
+        success = delete_folder(folder_path)
+        if not success:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        return {"status": "ok", "deleted": folder_path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/folders/{folder_path:path}")
+async def update_folder(folder_path: str, data: dict):
+    """Rename a folder."""
+    new_name = data.get('name')
+    if not new_name:
+        raise HTTPException(status_code=400, detail="New name is required")
+
+    try:
+        folder = rename_folder(folder_path, new_name)
+        return {"status": "ok", "folder": folder}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/folders/{folder_path:path}/move")
+async def move_folder_endpoint(folder_path: str, data: dict):
+    """Move a folder to a new parent."""
+    new_parent = data.get('parent')
+
+    try:
+        folder = move_folder(folder_path, new_parent)
+        return {"status": "ok", "folder": folder}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

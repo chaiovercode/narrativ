@@ -1,5 +1,5 @@
 /* =============================================================================
-   REVELIO - Native Mac App Styles
+   REVELIO - Main App Styles
    ============================================================================= */
 
 @import './styles/sidebar.css';
@@ -15,48 +15,9 @@
 @import './styles/style-selector.css';
 @import './styles/gallery.css';
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  /* Catppuccin Macchiato Theme */
-  --bg-window: #1e2030;
-  --bg-sidebar: #181926;
-  --bg-content: #1e2030;
-  --bg-elevated: #363a4f;
-  --bg-hover: #494d64;
-  --bg-active: #5b6078;
-  --bg-input: #363a4f;
-
-  /* Legacy variables for existing components */
-  --bg-primary: #11111b;
-  --bg-secondary: #1e2030;
-  --bg-tertiary: #181926;
-
-  --text-primary: #cad3f5;
-  --text-secondary: #b8c0e0;
-  --text-muted: #6e738d;
-
-  --border-subtle: #363a4f;
-  --border-medium: #494d64;
-
-  /* Accent - Mauve */
-  --accent-primary: #c6a0f6;
-  --accent-hover: #b7bdf8;
-  --accent-blue: #8aadf4;
-  --success: #a6da95;
-  --warning: #eed49f;
-  --error: #ed8796;
-
-  --nav-sidebar-width: 180px;
-
-  /* Typography */
-  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-  --font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
-}
+/* =============================================================================
+   APP LAYOUT
+   ============================================================================= */
 
 html,
 body,
@@ -65,123 +26,96 @@ body,
   overflow: hidden;
 }
 
-body {
-  font-family: var(--font-family);
-  font-size: 13px;
-  color: var(--text-primary);
-  background: var(--bg-window);
-  -webkit-font-smoothing: antialiased;
-}
-
-/* =============================================================================
-   APP LAYOUT
-   ============================================================================= */
-
 .app-wrapper {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg-base);
 }
 
 .app-container {
   display: flex;
   flex: 1;
   overflow: hidden;
-  /* Push content below the title bar */
-  margin-top: 0;
 }
 
 /* =============================================================================
-   SIDEBAR - Obsidian Style Dark Theme
+   SIDEBAR - Minimal Dark
    ============================================================================= */
 
 .app-sidebar {
   width: 200px;
   min-width: 200px;
-  background: #11111b;
-  border-right: 2px solid #494d64;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   user-select: none;
-  transition: width 0.15s ease, min-width 0.15s ease;
-  z-index: 1000;
-  position: relative;
+  transition: all var(--transition-fast);
+  z-index: 100;
   flex-shrink: 0;
+  position: relative;
 }
+
 
 .app-sidebar.collapsed {
-  width: 60px;
-  min-width: 60px;
-}
-
-/* Toolbar */
-.sidebar-toolbar {
-  height: 36px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-bottom: 1px solid #363a4f;
-  -webkit-app-region: drag;
-}
-
-.toolbar-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #6e738d;
-  cursor: pointer;
-  transition: all 0.1s ease;
-  -webkit-app-region: no-drag;
-}
-
-.toolbar-btn:hover {
-  background: #363a4f;
-  color: #cad3f5;
+  width: 56px;
+  min-width: 56px;
 }
 
 /* Navigation */
 .sidebar-nav {
   flex: 1;
-  padding: 8px 6px;
+  padding: var(--space-md);
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--space-xs);
   overflow-y: auto;
-  -webkit-app-region: no-drag;
+  scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border: none;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 2px solid transparent;
   background: transparent;
-  color: #b8c0e0;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
   font-family: inherit;
-  border-radius: 4px;
+  font-weight: 700;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-align: left;
   width: 100%;
+  position: relative;
 }
 
 .nav-item:hover {
-  background: #363a4f;
-  color: #cad3f5;
+  background: var(--bg-overlay);
+  color: var(--text-primary);
+  transform: translateX(4px);
+  border-color: var(--border-medium);
 }
 
 .nav-item.active {
-  background: #494d64;
-  color: #cad3f5;
+  background: var(--accent-muted);
+  color: var(--accent);
+  font-weight: 800;
+  border-color: var(--accent);
+  box-shadow: 0 4px 0 rgba(45, 212, 191, 0.2);
+}
+
+.nav-item.active:hover {
+  transform: translateX(4px) translateY(-2px);
+  box-shadow: 0 6px 0 rgba(45, 212, 191, 0.25);
 }
 
 .nav-chevron {
@@ -190,75 +124,62 @@ body {
   justify-content: center;
   width: 16px;
   height: 16px;
-  opacity: 0.5;
-  transition: transform 0.15s ease;
+  opacity: 0.4;
+  transition: transform var(--transition-fast);
 }
 
 .nav-item.active .nav-chevron {
   transform: rotate(90deg);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .nav-item svg {
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
+.nav-item:hover svg,
 .nav-item.active svg {
   opacity: 1;
 }
 
-.nav-label {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-shortcut {
-  font-size: 11px;
-  color: #6e738d;
-  background: #363a4f;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  margin-left: auto;
-}
-
-.nav-item.active .nav-shortcut {
-  background: #5b6078;
-  color: #b8c0e0;
-}
-
-/* Collapsed nav styles */
+/* Collapsed sidebar - Chunky Icons */
 .app-sidebar.collapsed .nav-item {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   margin: 0 auto;
   padding: 0;
-  color: #cad3f5;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 3px 0 transparent;
 }
 
 .app-sidebar.collapsed .nav-item svg {
-  opacity: 1;
   width: 22px;
   height: 22px;
-  stroke-width: 1.5;
-  flex-shrink: 0;
+  opacity: 0.7;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .app-sidebar.collapsed .nav-item:hover {
-  background: #363a4f;
-  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--btn-shadow-secondary);
+}
+
+.app-sidebar.collapsed .nav-item:hover svg,
+.app-sidebar.collapsed .nav-item.active svg {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .app-sidebar.collapsed .nav-item.active {
-  background: #494d64;
-  color: #c6a0f6;
+  color: var(--accent);
+  box-shadow: 0 4px 0 rgba(45, 212, 191, 0.2);
+}
+
+.app-sidebar.collapsed .nav-item.active:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 0 rgba(45, 212, 191, 0.25);
 }
 
 .app-sidebar.collapsed .nav-chevron {
@@ -266,38 +187,156 @@ body {
 }
 
 .app-sidebar.collapsed .sidebar-nav {
-  padding: 12px 8px;
-  gap: 8px;
+  padding: var(--space-xl) var(--space-sm) var(--space-md);
+  gap: var(--space-md);
   align-items: center;
 }
 
-/* Footer */
+/* Sidebar Footer */
 .sidebar-footer {
-  padding: 8px;
-  border-top: 1px solid #363a4f;
+  padding: var(--space-md);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  -webkit-app-region: no-drag;
+  justify-content: center;
 }
 
-.vault-section {
+.footer-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-xs);
 }
 
-.vault-name {
-  font-size: 12px;
-  color: #cad3f5;
-  font-weight: 500;
+.footer-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay);
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 3px 0 var(--btn-shadow-secondary);
+  position: relative;
+  top: 0;
 }
+
+.footer-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.footer-btn:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  top: -2px;
+  box-shadow: 0 5px 0 var(--btn-shadow-secondary);
+  border-color: var(--accent);
+}
+
+.footer-btn:hover svg {
+  transform: scale(1.1);
+}
+
+.footer-btn:active {
+  top: 3px;
+  box-shadow: 0 0 0 var(--btn-shadow-secondary);
+}
+
+.footer-btn.active {
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.app-sidebar.collapsed .sidebar-footer {
+  padding: var(--space-sm);
+}
+
+/* =============================================================================
+   MAIN CONTENT
+   ============================================================================= */
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  transition: padding-left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-main.notes-open {
+  padding-left: 420px;
+}
+
+/* =============================================================================
+   PAGE LAYOUTS
+   ============================================================================= */
+
+.create-page {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  animation: slideInFromLeft 0.2s ease;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.create-page .sidebar {
+  background: var(--bg-surface);
+}
+
+.create-page .main-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+}
+
+.gallery-page,
+.settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  background: var(--bg-base);
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  gap: var(--space-md);
+}
+
+/* =============================================================================
+   UTILITIES
+   ============================================================================= */
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #6e738d;
+  background: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -311,131 +350,6 @@ body {
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
-}
-
-.footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.footer-btn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #6e738d;
-  cursor: pointer;
-  transition: all 0.1s ease;
-}
-
-.footer-btn:hover {
-  background: #363a4f;
-  color: #b8c0e0;
-}
-
-.footer-btn.active {
-  background: #363a4f;
-  color: #cad3f5;
-}
-
-/* Collapsed footer */
-.app-sidebar.collapsed .sidebar-footer {
-  justify-content: center;
-  padding: 8px 4px;
-}
-
-.app-sidebar.collapsed .vault-section {
-  justify-content: center;
-}
-
-/* =============================================================================
-   MAIN CONTENT
-   ============================================================================= */
-
-.app-main {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-content);
-}
-
-/* =============================================================================
-   SCROLLBAR - macOS Style
-   ============================================================================= */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* =============================================================================
-   PAGE LAYOUTS
-   ============================================================================= */
-
-/* Create Page - Full width layout with form sidebar */
-.create-page {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
-.create-page .sidebar {
-  background: var(--bg-secondary);
-}
-
-.create-page .main-content {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-primary);
-}
-
-/* Gallery and Settings pages */
-.gallery-page,
-.settings-page {
-  height: 100%;
-  overflow-y: auto;
-  padding: 24px;
-  background: var(--bg-primary);
-}
-
-/* Empty state styling */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-secondary);
-  font-size: 14px;
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }

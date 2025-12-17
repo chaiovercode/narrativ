@@ -12,20 +12,20 @@
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.3s ease;
-  padding: 2rem;
+  padding: var(--space-2xl);
 }
 
 .lightbox-content {
   display: flex;
-  gap: 2rem;
+  gap: var(--space-2xl);
   max-width: 1200px;
   width: 100%;
   height: 90vh;
-  background: var(--bg-secondary);
-  border-radius: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
 }
 
 .lightbox-image-container {
@@ -44,22 +44,22 @@
 
 .lightbox-details {
   width: 400px;
-  padding: 3rem;
+  padding: var(--space-3xl);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  background: var(--bg-secondary);
+  gap: var(--space-xl);
+  background: var(--bg-surface);
 }
 
 .lightbox-details h2 {
-  font-size: 2rem;
+  font-size: var(--text-2xl);
   line-height: 1.2;
 }
 
 .lightbox-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-lg);
   color: var(--text-secondary);
 }
 
@@ -67,40 +67,40 @@
 .caption-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .caption-label {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent-primary);
+  color: var(--accent);
   font-weight: 600;
 }
 
 .caption-text {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   line-height: 1.6;
 }
 
 /* Hashtags Section */
 .hashtags-section {
-  margin-top: -0.5rem;
+  margin-top: calc(-1 * var(--space-sm));
 }
 
 .hashtags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .hashtag {
-  background: rgba(198, 160, 246, 0.1);
-  color: var(--accent-primary);
-  padding: 0.3rem 0.6rem;
-  border-radius: 2px;
-  font-size: 0.8rem;
+  background: var(--accent-muted);
+  color: var(--accent);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
@@ -108,12 +108,19 @@
 .lightbox-actions {
   margin-top: auto;
   display: flex;
-  gap: 1rem;
+  gap: var(--space-lg);
 }
 
 .lightbox-actions .overlay-btn {
   flex: 1;
   text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.lightbox-actions .copy-btn.copied {
+  background: var(--success);
+  color: var(--bg-base);
+  transform: scale(0.98);
 }
 
 /* Lightbox Navigation */
@@ -121,25 +128,32 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--bg-overlay);
+  border: 2px solid var(--border-medium);
+  color: var(--text-primary);
   width: 48px;
   height: 48px;
-  border-radius: 2px;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.1s ease;
   z-index: 1001;
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
 }
 
 .lightbox-nav:hover {
-  background: var(--accent-primary);
-  color: #1e2030;
-  border-color: var(--accent-primary);
-  box-shadow: 0 4px 12px rgba(198, 160, 246, 0.3);
+  background: var(--accent);
+  color: var(--bg-base);
+  border-color: var(--accent);
+  box-shadow: 0 6px 0 var(--btn-shadow-primary);
+  transform: translateY(calc(-50% - 2px));
+}
+
+.lightbox-nav:active {
+  box-shadow: 0 0 0 var(--btn-shadow-primary);
+  transform: translateY(calc(-50% + 4px));
 }
 
 .lightbox-prev { left: 40px; }
@@ -158,56 +172,74 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.15s ease;
+  animation: fadeIn var(--transition-fast);
 }
 
 .confirm-modal {
-  background: var(--bg-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 1.5rem 2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl) var(--space-2xl);
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 .confirm-modal p {
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--text-primary);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-xl);
   line-height: 1.5;
 }
 
 .confirm-modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-md);
   justify-content: flex-end;
 }
 
 .confirm-modal-btn {
-  padding: 0.6rem 1.25rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
-  border: none;
+  transition: all 0.1s ease;
+  position: relative;
+  top: 0;
 }
 
 .confirm-modal-btn.cancel {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-overlay);
   color: var(--text-primary);
+  border: 2px solid var(--border-medium);
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
 }
 
 .confirm-modal-btn.cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-muted);
+  top: -2px;
+  box-shadow: 0 6px 0 var(--btn-shadow-secondary);
+}
+
+.confirm-modal-btn.cancel:active {
+  top: 4px;
+  box-shadow: 0 0 0 var(--btn-shadow-secondary);
 }
 
 .confirm-modal-btn.confirm {
-  background: #ef4444;
+  background: var(--error);
   color: white;
+  border: none;
+  box-shadow: 0 4px 0 var(--btn-shadow-danger);
 }
 
 .confirm-modal-btn.confirm:hover {
-  background: #dc2626;
+  top: -2px;
+  box-shadow: 0 6px 0 var(--btn-shadow-danger);
+}
+
+.confirm-modal-btn.confirm:active {
+  top: 4px;
+  box-shadow: 0 0 0 var(--btn-shadow-danger);
 }

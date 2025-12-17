@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ConfirmModal } from '../ConfirmModal';
 
 /**
  * Obsidian-style editor with Edit/View mode toggle.
@@ -15,6 +16,8 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
   const [showLinkPicker, setShowLinkPicker] = useState(false);
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const saveTimeoutRef = useRef(null);
   const textareaRef = useRef(null);
   const isNewNote = !note?.id;
@@ -70,6 +73,21 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
     [content, debouncedSave, isNewNote]
   );
 
+  // Calculate cursor coordinates in textarea
+  const getCursorCoordinates = useCallback((textarea, position) => {
+    const text = textarea.value.substring(0, position);
+    const lines = text.split('\n');
+    const lineNumber = lines.length - 1;
+    const lineHeight = 24; // Approximate line height
+    const charWidth = 8; // Approximate char width for monospace
+    const lastLineLength = lines[lines.length - 1].length;
+
+    return {
+      top: (lineNumber + 1) * lineHeight + 8,
+      left: Math.min(lastLineLength * charWidth, 200)
+    };
+  }, []);
+
   // Handle content change and detect [[
   const handleContentChange = useCallback(
     (e) => {
@@ -83,6 +101,8 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
       const lastTwoChars = textBeforeCursor.slice(-2);
 
       if (lastTwoChars === '[[') {
+        const coords = getCursorCoordinates(e.target, cursorPos);
+        setPickerPosition(coords);
         setShowLinkPicker(true);
         setLinkSearchQuery('');
       } else if (showLinkPicker) {
@@ -105,7 +125,7 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
         debouncedSave(title, newContent);
       }
     },
-    [title, debouncedSave, showLinkPicker]
+    [title, debouncedSave, showLinkPicker, getCursorCoordinates]
   );
 
   // Insert selected research link
@@ -149,10 +169,21 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
 
   // Handle delete
   const handleDelete = useCallback(() => {
-    if (note?.id && window.confirm(`Delete "${title || 'this note'}"?`)) {
+    if (note?.id) {
+      setShowDeleteConfirm(true);
+    }
+  }, [note?.id]);
+
+  const confirmDelete = useCallback(() => {
+    if (note?.id) {
       onDelete(note.id);
     }
-  }, [note?.id, title, onDelete]);
+    setShowDeleteConfirm(false);
+  }, [note?.id, onDelete]);
+
+  const cancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
 
   // Toggle mode
   const toggleMode = useCallback(() => {
@@ -199,7 +230,7 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
       if (e.key === 'Escape') {
         e.preventDefault();
         setShowLinkPicker(false);
-      } else if (e.key === 'Enter' && filteredResearch.length > 0) {
+      } else if ((e.key === 'Enter' || e.key === 'Tab') && filteredResearch.length > 0) {
         e.preventDefault();
         insertResearchLink(filteredResearch[0]);
       }
@@ -374,6 +405,12 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
           value={title}
           onChange={handleTitleChange}
           autoFocus={isNewNote}
+          onKeyDown={(e) => {
+            if (e.key === 'Tab' && !e.shiftKey) {
+              e.preventDefault();
+              textareaRef.current?.focus();
+            }
+          }}
         />
 
         {mode === 'edit' ? (
@@ -387,34 +424,20 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
             />
 
             {/* Research Link Picker */}
-            {showLinkPicker && (
-              <div className="link-picker">
-                <div className="link-picker-header">
-                  Link to Research
-                  <span className="link-picker-hint">Type to filter, Enter to select</span>
-                </div>
-                {filteredResearch.length > 0 ? (
-                  <div className="link-picker-items">
-                    {filteredResearch.slice(0, 5).map((research) => (
-                      <button
-                        key={research.id}
-                        className="link-picker-item"
-                        onClick={() => insertResearchLink(research)}
-                      >
-                        <span className="link-item-title">{research.topic}</span>
-                        {research.slides && (
-                          <span className="link-item-meta">{research.slides.length} slides</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="link-picker-empty">
-                    {researchBoards.length === 0
-                      ? 'No research boards yet'
-                      : 'No matching research found'}
-                  </div>
-                )}
+            {showLinkPicker && filteredResearch.length > 0 && (
+              <div
+                className="link-picker"
+                style={{ top: pickerPosition.top, left: pickerPosition.left }}
+              >
+                {filteredResearch.slice(0, 5).map((research) => (
+                  <button
+                    key={research.id}
+                    className="link-picker-item"
+                    onClick={() => insertResearchLink(research)}
+                  >
+                    {research.topic}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -431,6 +454,12 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
         )}
       </div>
 
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        message={`Delete "${title || 'this note'}"?`}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

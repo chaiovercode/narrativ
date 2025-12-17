@@ -147,6 +147,8 @@ def get_trending_topics(categories) -> list:
 
 {content}
 
+IMPORTANT: Write ALL topics in ENGLISH only, regardless of the source language.
+
 Extract exactly 4 interesting, specific topics for visual story content.
 Requirements:
 - MUST be based on the provided news snippets (do not hallucinate)
@@ -160,7 +162,7 @@ Return as JSON array of strings only. No markdown."""
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-3-flash',
             contents=prompt
         )
         text = clean_json_response(response.text)

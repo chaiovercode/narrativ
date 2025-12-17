@@ -67,7 +67,7 @@ Example output format:
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-3-flash',
             contents=prompt
         )
         text_response = response.text.strip().replace("```json", "").replace("```", "")

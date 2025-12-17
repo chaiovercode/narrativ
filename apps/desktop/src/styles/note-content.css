@@ -1,0 +1,385 @@
+/* =============================================================================
+   NOTE CONTENT VIEW - Full-width note editor in main area
+   ============================================================================= */
+
+.note-content-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.note-content-view.empty {
+  align-items: center;
+  justify-content: center;
+  padding-left: 200px; /* Offset to center in visible area (accounting for notes panel) */
+}
+
+.note-content-view .empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.note-content-view .empty-state svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.note-content-view .empty-state h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.note-content-view .empty-state p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* =============================================================================
+   HEADER - Title bar with inline title input
+   ============================================================================= */
+
+.note-content-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  height: 70px;
+  min-height: 70px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.note-content-header .note-title-input {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  outline: none;
+  min-width: 0;
+  letter-spacing: -0.02em;
+}
+
+.note-content-header .note-title-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.note-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.note-status .saving {
+  color: var(--accent);
+}
+
+.note-status .saved {
+  color: var(--success);
+}
+
+.note-content-header .mode-toggle-btn {
+  padding: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.note-content-header .mode-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.note-content-header .mode-toggle-btn.view {
+  color: var(--accent);
+}
+
+.note-content-header .mode-toggle-btn.view:hover {
+  background: var(--accent-muted);
+}
+
+.note-content-header .delete-btn {
+  padding: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.note-content-header .delete-btn:hover {
+  color: var(--error);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* =============================================================================
+   BODY - Full content area below header
+   ============================================================================= */
+
+.note-content-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   TEXTAREA - Full area editor
+   ============================================================================= */
+
+.note-textarea-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.note-content-input {
+  flex: 1;
+  width: 100%;
+  padding: 1.5rem 2rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  line-height: 1.8;
+  resize: none;
+  outline: none;
+}
+
+.note-content-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Link Picker */
+.note-content-view .link-picker {
+  position: absolute;
+  left: 2rem;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.note-content-view .link-picker-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.note-content-view .link-picker-item:hover {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.note-content-view .link-picker-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+/* =============================================================================
+   MARKDOWN CONTENT - View Mode
+   ============================================================================= */
+
+.note-markdown-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  cursor: text;
+}
+
+.note-markdown-content .empty-content {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Headings */
+.note-markdown-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 1.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.note-markdown-content h1:first-child {
+  margin-top: 0;
+}
+
+.note-markdown-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 1.25rem 0 0.75rem;
+}
+
+.note-markdown-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 1rem 0 0.5rem;
+}
+
+/* Paragraphs */
+.note-markdown-content p {
+  margin: 0 0 1rem;
+}
+
+.note-markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Links */
+.note-markdown-content a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.note-markdown-content a:hover {
+  border-bottom-color: var(--accent-primary);
+}
+
+/* Wiki Links */
+.note-markdown-content .wiki-link {
+  color: var(--accent-primary);
+  background: rgba(198, 160, 246, 0.1);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.note-markdown-content .wiki-link:hover {
+  background: rgba(198, 160, 246, 0.2);
+}
+
+/* Bold and Italic */
+.note-markdown-content strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.note-markdown-content em {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* Inline Code */
+.note-markdown-content code,
+.note-markdown-content .inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: rgba(198, 160, 246, 0.1);
+  color: var(--accent-primary);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+/* Code Blocks */
+.note-markdown-content pre {
+  background: #11111b;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.note-markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Blockquotes */
+.note-markdown-content blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 0 0.5rem 1rem;
+  border-left: 3px solid var(--accent-primary);
+  background: rgba(198, 160, 246, 0.05);
+  border-radius: 0 4px 4px 0;
+}
+
+.note-markdown-content blockquote p {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Lists */
+.note-markdown-content ul,
+.note-markdown-content ol {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.note-markdown-content li {
+  margin: 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.note-markdown-content li::marker {
+  color: var(--text-muted);
+}
+
+/* Horizontal Rule */
+.note-markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 1.5rem 0;
+}

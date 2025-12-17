@@ -3,122 +3,127 @@
    ============================================================================= */
 
 .research-toggle {
-  position: fixed;
-  left: 420px;
+  position: absolute;
+  right: -32px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 100;
-  width: 28px;
-  height: 56px;
-  background: var(--bg-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: none;
-  border-radius: 0 2px 2px 0;
+  z-index: 101;
+  width: 24px;
+  height: 48px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .research-toggle:hover {
-  background: var(--accent-primary);
-  color: #000;
-  border-color: var(--accent-primary);
+  background: var(--accent);
+  color: var(--bg-base);
+  border-color: var(--accent);
 }
 
-.research-toggle.expanded {
-  left: 780px;
+.research-toggle svg {
+  transition: transform 0.3s ease;
 }
 
-.research-toggle.expanded svg {
+.research-panel.collapsed .research-toggle svg {
+  transform: rotate(0deg);
+}
+
+.research-panel.expanded .research-toggle svg {
   transform: rotate(180deg);
 }
 
 .research-panel {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 360px;
-  height: 100vh;
-  background: var(--bg-secondary);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  left: 440px;
+  top: 37px;
+  width: 480px;
+  height: calc(100vh - 37px);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
   z-index: 40;
-  transition: left 0.3s ease;
-  overflow: hidden;
+  transition: transform 0.3s ease;
+  overflow: visible;
 }
 
 .research-panel.collapsed {
-  left: 0;
+  transform: translateX(calc(-100% - 8px));
 }
 
 .research-panel.expanded {
-  left: 420px;
+  transform: translateX(0);
 }
 
 .research-panel-content {
   height: 100%;
   overflow-y: auto;
-  padding: 2rem;
+  overflow-x: hidden;
+  padding: var(--space-2xl);
+  background: var(--bg-surface);
 }
 
 .research-panel-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: var(--space-2xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border);
 }
 
 .research-panel-header h3 {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent-primary);
-  margin-bottom: 0.5rem;
+  color: var(--accent);
+  margin-bottom: var(--space-sm);
 }
 
 .research-topic {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
 }
 
 .research-panel-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-xl);
 }
 
 .research-panel-section > label {
   display: block;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-sm);
 }
 
 .research-panel-section > p {
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
 .research-slide-item {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.65rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 2px;
-  margin-bottom: 0.5rem;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-overlay);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
 }
 
 .research-slide-item .slide-num {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  color: var(--accent-primary);
-  background: rgba(198, 160, 246, 0.15);
+  color: var(--accent);
+  background: var(--accent-muted);
   width: 22px;
   height: 22px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,13 +132,13 @@
 
 .research-slide-item strong {
   display: block;
-  font-size: 0.85rem;
-  color: white;
-  margin-bottom: 0.25rem;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
 }
 
 .research-slide-item p {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: 1.4;
 }
@@ -141,31 +146,31 @@
 .research-source-link {
   display: block;
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   text-decoration: none;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: color 0.2s;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border);
+  transition: color var(--transition-normal);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .research-source-link:hover {
-  color: var(--accent-primary);
+  color: var(--accent);
 }
 
 /* Editable Research Fields */
 .editable-research-field {
-  padding: 0.5rem;
-  border-radius: 6px;
-  transition: all 0.2s;
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
   cursor: text;
 }
 
 .editable-research-field:hover,
 .editable-research-field:focus {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-overlay);
   outline: none;
 }
 
@@ -175,16 +180,16 @@
 
 .research-slide-item.editable strong,
 .research-slide-item.editable p {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-normal);
 }
 
 .research-slide-item.editable strong:hover,
 .research-slide-item.editable strong:focus,
 .research-slide-item.editable p:hover,
 .research-slide-item.editable p:focus {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-overlay);
   outline: none;
 }
 
@@ -192,68 +197,68 @@
 .research-boards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-xl);
   overflow-y: auto;
 }
 
 .research-board-card {
-  background: var(--bg-secondary);
-  border-radius: 4px;
-  padding: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.15s;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
+  transition: all var(--transition-fast);
   cursor: pointer;
   position: relative;
 }
 
 .research-board-card:hover {
-  border-color: var(--accent-primary);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
 }
 
 .research-board-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-md);
 }
 
 .research-board-header h3 {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   line-height: 1.3;
 }
 
 .slide-count {
-  font-size: 0.75rem;
-  color: var(--accent-primary);
-  background: rgba(198, 160, 246, 0.15);
-  padding: 0.2rem 0.5rem;
-  border-radius: 2px;
+  font-size: var(--text-xs);
+  color: var(--accent);
+  background: var(--accent-muted);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 
 .research-style {
   color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-lg);
   font-style: italic;
 }
 
 .research-slides-preview {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .research-slide-preview {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .research-slide-preview span {
-  color: var(--accent-primary);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -264,8 +269,8 @@
 }
 
 .research-sources-count {
-  margin-top: 1rem;
-  font-size: 0.8rem;
+  margin-top: var(--space-lg);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   opacity: 0.7;
 }
@@ -280,13 +285,13 @@
 .research-detail-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0;
+  padding: var(--space-lg) 0;
 }
 
 .research-detail-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: var(--space-2xl);
+  padding-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--border);
 }
 
 .research-detail-section:last-child {
@@ -295,11 +300,11 @@
 
 .research-detail-section > label {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent-primary);
-  margin-bottom: 0.75rem;
+  color: var(--accent);
+  margin-bottom: var(--space-md);
 }
 
 .research-detail-section > p {
@@ -310,51 +315,137 @@
 .research-detail-slides {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-lg);
 }
 
 .research-detail-slide {
-  background: var(--bg-secondary);
-  border-radius: 4px;
-  padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
 }
 
 .research-detail-slide .slide-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.research-detail-slide .slide-header h4 {
+  flex: 1;
+}
+
+/* Editable fields in research detail */
+.research-detail-slide .editable-title,
+.research-detail-slide .editable-field {
+  padding: var(--space-xs) var(--space-sm);
+  margin: calc(-1 * var(--space-xs)) calc(-1 * var(--space-sm));
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  cursor: text;
+  outline: none;
+}
+
+.research-detail-slide .editable-title:hover,
+.research-detail-slide .editable-field:hover {
+  background: var(--bg-overlay);
+  border-color: var(--border-medium);
+}
+
+.research-detail-slide .editable-title:focus,
+.research-detail-slide .editable-field:focus {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+}
+
+/* Delete button in research detail */
+.research-detail-slide .slide-delete-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all var(--transition-fast);
+}
+
+.research-detail-slide:hover .slide-delete-btn {
+  opacity: 1;
+}
+
+.research-detail-slide .slide-delete-btn:hover {
+  background: rgba(243, 139, 168, 0.1);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* Add Scene Button in research detail */
+.research-detail-slides .add-scene-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-lg);
+  background: var(--bg-overlay);
+  border: 2px dashed var(--border-medium);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  margin-top: var(--space-md);
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+  position: relative;
+  top: 0;
+}
+
+.research-detail-slides .add-scene-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+  top: -2px;
+  box-shadow: 0 6px 0 var(--btn-shadow-secondary);
+}
+
+.research-detail-slides .add-scene-btn:active {
+  top: 4px;
+  box-shadow: 0 0 0 var(--btn-shadow-secondary);
 }
 
 .research-detail-slide .slide-num {
   width: 26px;
   height: 26px;
-  background: var(--accent-primary);
-  color: #000;
-  border-radius: 2px;
+  background: var(--accent);
+  color: var(--bg-base);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .research-detail-slide h4 {
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
 .research-detail-slide .slide-fact {
   color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-md);
   line-height: 1.5;
 }
 
 .research-detail-slide .slide-visual {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-style: italic;
   line-height: 1.5;
 }
@@ -362,27 +453,27 @@
 .hashtags-preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }
 
 .research-detail-sources {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .source-link {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.9rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: color 0.2s;
+  font-size: var(--text-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border);
+  transition: color var(--transition-normal);
 }
 
 .source-link:hover {
-  color: var(--accent-primary);
+  color: var(--accent);
 }
 
 .source-link:last-child {

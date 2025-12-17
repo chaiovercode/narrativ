@@ -6,9 +6,11 @@ Supports both legacy JSON storage and vault-based markdown storage.
 import json
 import os
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
 
 # Legacy data directory (used when no vault is set)
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -86,9 +88,14 @@ created: {created}
     # Add slides
     slides = board.get('slides', [])
     for i, slide in enumerate(slides, 1):
-        content += f"## Slide {i}: {slide.get('hook', '')}\n\n"
-        content += f"**Key Fact**: {slide.get('fact', '')}\n\n"
-        content += f"**Visual**: {slide.get('visual', '')}\n\n"
+        # Support both old format (hook/fact/visual) and new format (title/key_fact/visual_description)
+        title = slide.get('title') or slide.get('hook', '') if isinstance(slide, dict) else ''
+        key_fact = slide.get('key_fact') or slide.get('fact', '') if isinstance(slide, dict) else ''
+        visual = slide.get('visual_description') or slide.get('visual', '') if isinstance(slide, dict) else ''
+
+        content += f"## Slide {i}: {title}\n\n"
+        content += f"**Key Fact**: {key_fact}\n\n"
+        content += f"**Visual**: {visual}\n\n"
         if slide.get('mood'):
             content += f"**Mood**: {slide.get('mood')}\n\n"
 
@@ -170,17 +177,18 @@ def markdown_to_board(content: str, filename: str) -> Dict[str, Any]:
     # Parse slides from body
     slides = []
     slide_matches = re.findall(
-        r'## Slide \d+: (.+?)\n\n\*\*Key Fact\*\*: (.+?)\n\n\*\*Visual\*\*: (.+?)\n\n(?:\*\*Mood\*\*: (.+?)\n\n)?',
+        r'## Slide (\d+): (.+?)\n\n\*\*Key Fact\*\*: (.+?)\n\n\*\*Visual\*\*: (.+?)\n\n(?:\*\*Mood\*\*: (.+?)\n\n)?',
         body, re.DOTALL
     )
     for match in slide_matches:
         slide = {
-            'hook': match[0].strip(),
-            'fact': match[1].strip(),
-            'visual': match[2].strip(),
+            'slide_number': int(match[0]),
+            'title': match[1].strip(),
+            'key_fact': match[2].strip(),
+            'visual_description': match[3].strip(),
         }
-        if match[3]:
-            slide['mood'] = match[3].strip()
+        if match[4]:
+            slide['mood'] = match[4].strip()
         slides.append(slide)
 
     board['slides'] = slides
@@ -259,15 +267,29 @@ def save_boards(board_type: str, boards: List[Dict[str, Any]]) -> None:
 
 
 def add_board(board_type: str, board: Dict[str, Any]) -> Dict[str, Any]:
-    """Add a new board and return it."""
+    """Add a new board and return it. For research, skips if topic already exists."""
 
     # For research boards with vault, save as markdown
     if board_type == "research" and VAULT_PATH:
         research_dir = Path(VAULT_PATH) / "research"
         research_dir.mkdir(exist_ok=True)
 
-        # Generate filename from topic
+        # Check if research with same topic already exists
         topic = board.get('topic', 'untitled')
+        topic_lower = topic.lower().strip()
+
+        for md_file in research_dir.glob("*.md"):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                existing = markdown_to_board(content, md_file.name)
+                if existing.get('topic', '').lower().strip() == topic_lower:
+                    print(f"[boards] Research for '{topic}' already exists, skipping")
+                    existing['_filename'] = md_file.name
+                    return existing  # Return existing board instead of creating duplicate
+            except Exception:
+                pass
+
+        # Generate filename from topic
         slug = slugify(topic)
 
         # Add timestamp to ensure uniqueness
@@ -321,6 +343,32 @@ def delete_board(board_type: str, board_id: int) -> bool:
                 pass
         return False
 
+    # For images boards, also delete the actual image files
+    if board_type == "images":
+        boards = load_boards(board_type)
+        board_to_delete = next((b for b in boards if b.get("id") == board_id), None)
+
+        if board_to_delete and VAULT_PATH:
+            # Get image URLs and extract folder name
+            images = board_to_delete.get("images", [])
+            if images:
+                # Extract folder name from first image URL
+                # URL format: http://localhost:8000/images/{folder_name}/{filename}
+                try:
+                    first_url = images[0]
+                    path_parts = urlparse(first_url).path.split('/')
+                    # Find 'images' in path and get the next part (folder name)
+                    if 'images' in path_parts:
+                        idx = path_parts.index('images')
+                        if idx + 1 < len(path_parts):
+                            folder_name = path_parts[idx + 1]
+                            attachments_dir = Path(VAULT_PATH) / "attachments" / folder_name
+                            if attachments_dir.exists():
+                                shutil.rmtree(attachments_dir)
+                                print(f"[boards] Deleted attachments folder: {attachments_dir}")
+                except Exception as e:
+                    print(f"[boards] Error deleting image files: {e}")
+
     # Legacy JSON storage
     boards = load_boards(board_type)
     original_length = len(boards)
@@ -343,3 +391,226 @@ def get_board(board_type: str, board_id: int) -> Optional[Dict[str, Any]]:
             return board
 
     return None
+
+
+def update_board(board_type: str, board_id: int, updated_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Update an existing board by ID. Returns updated board or None if not found."""
+
+    # For research boards with vault, update markdown file
+    if board_type == "research" and VAULT_PATH:
+        research_dir = Path(VAULT_PATH) / "research"
+        if not research_dir.exists():
+            return None
+
+        # Find the file with matching ID
+        for md_file in research_dir.glob("*.md"):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                board = markdown_to_board(content, md_file.name)
+                if board.get('id') == board_id:
+                    # Merge updated data
+                    board.update(updated_data)
+                    board['id'] = board_id  # Ensure ID stays the same
+
+                    # Convert back to markdown and save
+                    markdown = board_to_markdown(board)
+                    md_file.write_text(markdown, encoding='utf-8')
+
+                    board['_filename'] = md_file.name
+                    return board
+            except Exception as e:
+                print(f"[boards] Error updating {md_file}: {e}")
+
+        return None
+
+    # Legacy JSON storage
+    boards = load_boards(board_type)
+
+    for i, board in enumerate(boards):
+        if board.get("id") == board_id:
+            # Merge updated data
+            boards[i].update(updated_data)
+            boards[i]['id'] = board_id  # Ensure ID stays the same
+            save_boards(board_type, boards)
+            return boards[i]
+
+    return None
+
+
+def sync_attachments_with_boards() -> Dict[str, Any]:
+    """
+    Sync the vault's attachments folder with image boards.
+    - Adds new boards for folders not in the gallery
+    - Updates existing boards with new images from their folders
+    - Removes board entries for folders that no longer exist
+    Returns stats about the sync operation.
+    """
+    if not VAULT_PATH:
+        return {"added": 0, "removed": 0, "updated": 0, "error": "No vault configured"}
+
+    attachments_dir = Path(VAULT_PATH) / "attachments"
+    if not attachments_dir.exists():
+        return {"added": 0, "removed": 0, "updated": 0, "error": "Attachments directory doesn't exist"}
+
+    # Load current image boards
+    boards = load_boards("images")
+
+    # Build a map of folder_name -> board index for existing boards
+    folder_to_board_idx = {}
+    for i, board in enumerate(boards):
+        images = board.get("images", [])
+        for img_url in images:
+            try:
+                path_parts = urlparse(img_url).path.split('/')
+                if 'images' in path_parts:
+                    idx = path_parts.index('images')
+                    if idx + 1 < len(path_parts):
+                        folder_name = path_parts[idx + 1]
+                        folder_to_board_idx[folder_name] = i
+                        break  # Only need first image to identify folder
+            except Exception:
+                pass
+
+    existing_folders = set(folder_to_board_idx.keys())
+
+    # Scan attachments folder for actual folders
+    actual_folders = set()
+    for folder in attachments_dir.iterdir():
+        if folder.is_dir():
+            actual_folders.add(folder.name)
+
+    added_count = 0
+    removed_count = 0
+    updated_count = 0
+
+    def get_images_from_folder(folder_path: Path) -> List[str]:
+        """Scan folder for all image files and return URLs."""
+        images = []
+        for ext in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
+            for img_file in folder_path.glob(ext):
+                img_url = f"http://localhost:8000/images/{folder_path.name}/{img_file.name}"
+                images.append(img_url)
+        images.sort()
+        return images
+
+    # Add new boards for folders not in gallery
+    for folder_name in actual_folders - existing_folders:
+        folder_path = attachments_dir / folder_name
+        images = get_images_from_folder(folder_path)
+
+        if images:
+            # Create a new board
+            topic = folder_name.replace("-", " ").replace("_", " ").title()
+            new_board = {
+                "id": int(datetime.now().timestamp() * 1000) + added_count,
+                "topic": topic,
+                "images": images,
+                "slides": [],
+                "caption": "",
+                "hashtags": [],
+                "createdAt": datetime.now().isoformat(),
+                "synced": True  # Mark as synced from folder
+            }
+            boards.insert(0, new_board)
+            added_count += 1
+            print(f"[sync] Added board for folder: {folder_name} ({len(images)} images)")
+
+    # Update existing boards with new images from their folders
+    for folder_name in existing_folders & actual_folders:
+        folder_path = attachments_dir / folder_name
+        current_images = get_images_from_folder(folder_path)
+
+        board_idx = folder_to_board_idx[folder_name]
+        board = boards[board_idx]
+        existing_images = set(board.get("images", []))
+
+        # Check if there are new images
+        new_images = set(current_images) - existing_images
+        if new_images:
+            # Update board with all current images from folder
+            boards[board_idx]["images"] = current_images
+            updated_count += 1
+            print(f"[sync] Updated board for folder: {folder_name} (+{len(new_images)} images, total: {len(current_images)})")
+
+    # Remove boards for folders that no longer exist
+    boards_to_keep = []
+    for board in boards:
+        images = board.get("images", [])
+        if not images:
+            boards_to_keep.append(board)
+            continue
+
+        # Check first image's folder
+        try:
+            first_url = images[0]
+            path_parts = urlparse(first_url).path.split('/')
+            if 'images' in path_parts:
+                idx = path_parts.index('images')
+                if idx + 1 < len(path_parts):
+                    folder_name = path_parts[idx + 1]
+                    if folder_name in actual_folders:
+                        boards_to_keep.append(board)
+                    else:
+                        removed_count += 1
+                        print(f"[sync] Removed board for missing folder: {folder_name}")
+                else:
+                    boards_to_keep.append(board)
+            else:
+                boards_to_keep.append(board)
+        except Exception:
+            boards_to_keep.append(board)
+
+    # Save updated boards
+    if added_count > 0 or removed_count > 0 or updated_count > 0:
+        save_boards("images", boards_to_keep)
+
+    return {
+        "added": added_count,
+        "removed": removed_count,
+        "updated": updated_count,
+        "total_boards": len(boards_to_keep),
+        "total_folders": len(actual_folders)
+    }
+
+
+def cleanup_orphaned_attachments() -> int:
+    """
+    Remove attachment folders that don't have corresponding entries in the gallery.
+    Returns the number of orphaned folders removed.
+    """
+    if not VAULT_PATH:
+        return 0
+
+    attachments_dir = Path(VAULT_PATH) / "attachments"
+    if not attachments_dir.exists():
+        return 0
+
+    # Load all image boards
+    boards = load_boards("images")
+
+    # Extract all folder names from image URLs
+    valid_folders = set()
+    for board in boards:
+        images = board.get("images", [])
+        for img_url in images:
+            try:
+                path_parts = urlparse(img_url).path.split('/')
+                if 'images' in path_parts:
+                    idx = path_parts.index('images')
+                    if idx + 1 < len(path_parts):
+                        valid_folders.add(path_parts[idx + 1])
+            except Exception:
+                pass
+
+    # Find and remove orphaned folders
+    removed_count = 0
+    for folder in attachments_dir.iterdir():
+        if folder.is_dir() and folder.name not in valid_folders:
+            try:
+                shutil.rmtree(folder)
+                print(f"[boards] Removed orphaned attachment folder: {folder.name}")
+                removed_count += 1
+            except Exception as e:
+                print(f"[boards] Error removing orphaned folder {folder.name}: {e}")
+
+    return removed_count

@@ -15,29 +15,84 @@ def generate_story_caption(topic: str, slides: list) -> dict:
 
     slide_summaries = "\n".join([f"- {s['title']}: {s['key_fact']}" for s in slides])
 
-    prompt = f"""I've created a {len(slides)}-part Instagram/WhatsApp story series about: "{topic}"
+    prompt = f"""<ROLE>
+You are a viral social media copywriter who has written captions for accounts with 10M+ followers. You understand the psychology of engagement: curiosity gaps, pattern interrupts, and emotional triggers that drive shares.
+</ROLE>
 
-Here are the slides:
+<CONTEXT>
+I've created a {len(slides)}-part Instagram/WhatsApp story series about: "{topic}"
+
+SLIDE CONTENT:
 {slide_summaries}
+</CONTEXT>
 
-Generate ONE engaging social media caption for the ENTIRE story series.
+<TASK>
+Write ONE caption that maximizes story views and shares.
+</TASK>
 
-Requirements:
-- 2-4 sentences, conversational tone
-- Highlight the most striking fact
-- Create curiosity to swipe through
-- End with thought-provoking statement
+<VIRAL_CAPTION_FORMULA>
+Structure your caption using this proven framework:
 
-Also provide exactly 3 relevant hashtags (without # symbol).
+1. HOOK (First Line) - Pattern Interrupt:
+   → Open with the most shocking stat or counterintuitive claim
+   → Use specific numbers (they outperform vague claims by 73%)
+   → Create an open loop that demands closure
 
-Return as JSON object only. No markdown.
+2. BRIDGE (1-2 sentences) - Emotional Connection:
+   → Connect the fact to something personal or universal
+   → Use "you" to make it feel relevant to the reader
+   → Build anticipation for the story content
 
-Example:
-{{"caption": "Did you know Delhi's air is 16x more toxic than WHO limits? Swipe through to see how this invisible killer is affecting millions.", "hashtags": ["DelhiPollution", "AirQuality", "HealthAwareness"]}}"""
+3. CTA (Final Line) - Clear Direction:
+   → Tell them exactly what to do: "Swipe to see..." / "Tap through..."
+   → Create FOMO: what they'll miss if they don't watch
+   → Optional: soft engagement prompt (save/share if valuable)
+</VIRAL_CAPTION_FORMULA>
+
+<CAPTION_PSYCHOLOGY>
+HIGH-PERFORMING PATTERNS:
+✓ "Most people don't know that [shocking fact]..."
+✓ "[Specific number] - that's [context that makes it impactful]"
+✓ "I spent [X hours/days] researching [topic]. Here's what I found..."
+✓ "This changed how I think about [topic]..."
+✓ "The [topic] industry doesn't want you to know this..."
+
+AVOID:
+✗ "Hey guys!" or generic greetings
+✗ "Check out my new post" (zero value)
+✗ Starting with "Did you know" (overused)
+✗ Asking questions without providing value first
+✗ Generic CTAs like "link in bio"
+</CAPTION_PSYCHOLOGY>
+
+<HASHTAG_STRATEGY>
+Provide exactly 3 hashtags optimized for discovery:
+1. Niche hashtag (specific to topic, 10K-500K posts)
+2. Community hashtag (targets interested audience)
+3. Broad reach hashtag (1M+ posts for discovery)
+
+Format: Without # symbol, CamelCase
+</HASHTAG_STRATEGY>
+
+<OUTPUT_FORMAT>
+Return ONLY valid JSON. No markdown, no explanation.
+
+{{"caption": "Your 2-4 sentence viral caption here", "hashtags": ["NicheTag", "CommunityTag", "BroadTag"]}}
+</OUTPUT_FORMAT>
+
+<QUALITY_CHECK>
+Before outputting, verify:
+□ Does the first line stop the scroll?
+□ Would YOU want to swipe after reading this?
+□ Is there a clear reason to watch NOW vs later (they won't)?
+□ Are hashtags relevant and properly sized?
+</QUALITY_CHECK>
+
+LANGUAGE: English only. Generate the caption now."""
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-3-flash',
             contents=prompt
         )
         text = clean_json_response(response.text)

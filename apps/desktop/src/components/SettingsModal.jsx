@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
 import { readBinaryFile } from '@tauri-apps/api/fs';
-import { appDataDir, join } from '@tauri-apps/api/path';
+import { ConfirmModal } from './ConfirmModal';
 import '../styles/settings-modal.css';
 
 const SETTINGS_TABS = [
@@ -51,6 +51,8 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
 
   // Vault state
   const [vaultPath, setVaultPath] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
 
   // Brands state (multiple brands)
   const [brands, setBrands] = useState([]);
@@ -58,8 +60,9 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
   const [brandSaving, setBrandSaving] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
 
-  // Backend status
-  const [backendStatus, setBackendStatus] = useState({ running: false, port: 0 });
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, type: null, id: null, message: '' });
+
 
   // Handle Escape key
   useEffect(() => {
@@ -77,7 +80,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     if (isOpen) {
       loadApiKeyStatus();
       loadBrands();
-      checkBackendStatus();
       loadVaultPath();
     }
   }, [isOpen]);
@@ -98,6 +100,27 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
       } catch (err) {
         console.error('Failed to reveal vault:', err);
       }
+    }
+  };
+
+  const handleSyncVault = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const response = await fetch('http://localhost:8000/vault/sync', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setSyncResult(result);
+      } else {
+        setSyncResult({ error: 'Failed to sync vault' });
+      }
+    } catch (err) {
+      console.error('Failed to sync vault:', err);
+      setSyncResult({ error: err.message || 'Failed to sync vault' });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -127,15 +150,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     }
   };
 
-  const checkBackendStatus = async () => {
-    try {
-      const status = await invoke('get_backend_status');
-      setBackendStatus(status);
-    } catch (err) {
-      console.error('Failed to check backend status:', err);
-    }
-  };
-
   const handleKeyChange = (keyId, value) => {
     setApiKeys(prev => ({ ...prev, [keyId]: value }));
   };
@@ -154,10 +168,15 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
       setKeyStatus(prev => ({ ...prev, [keyId]: true }));
       setApiKeys(prev => ({ ...prev, [keyId]: '' }));
 
-      if (backendStatus.running) {
-        const dataDir = await appDataDir();
-        const backendPath = await join(dataDir, '..', '..', 'python-backend');
-        await invoke('restart_backend', { pythonBackendPath: backendPath });
+      // Restart backend to apply new key
+      try {
+        console.log('Restarting backend to apply new API key...');
+        await invoke('restart_backend', { pythonBackendPath: '' });
+        console.log('Backend restarted successfully');
+      } catch (restartErr) {
+        console.error('Backend restart failed:', restartErr);
+        // Show a message that user may need to restart the app
+        alert('API key saved! You may need to restart the app for changes to take effect.');
       }
     } catch (err) {
       console.error('Failed to save API key:', err);
@@ -167,9 +186,16 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     }
   };
 
-  const deleteApiKey = async (keyId) => {
-    if (!confirm(`Are you sure you want to delete the ${keyId.replace(/_/g, ' ')}?`)) return;
+  const handleDeleteApiKey = useCallback((keyId) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'api-key',
+      id: keyId,
+      message: `Delete the ${keyId.replace(/_/g, ' ')}?`
+    });
+  }, []);
 
+  const confirmDeleteApiKey = async (keyId) => {
     try {
       await invoke('delete_api_key', { service: keyId });
       setKeyStatus(prev => ({ ...prev, [keyId]: false }));
@@ -280,9 +306,16 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     }
   };
 
-  const deleteBrand = async (brandId) => {
-    if (!confirm('Are you sure you want to delete this brand?')) return;
+  const handleDeleteBrand = useCallback((brandId) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'brand',
+      id: brandId,
+      message: 'Delete this brand?'
+    });
+  }, []);
 
+  const confirmDeleteBrand = async (brandId) => {
     try {
       const response = await fetch(`http://localhost:8000/brands/${brandId}`, {
         method: 'DELETE',
@@ -299,6 +332,19 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     }
   };
 
+  const handleConfirmDelete = useCallback(async () => {
+    if (deleteConfirm.type === 'api-key') {
+      await confirmDeleteApiKey(deleteConfirm.id);
+    } else if (deleteConfirm.type === 'brand') {
+      await confirmDeleteBrand(deleteConfirm.id);
+    }
+    setDeleteConfirm({ isOpen: false, type: null, id: null, message: '' });
+  }, [deleteConfirm]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteConfirm({ isOpen: false, type: null, id: null, message: '' });
+  }, []);
+
   if (!isOpen) return null;
 
   const renderTabContent = () => {
@@ -314,18 +360,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                   <span className="setting-description">Revelio v1.0.0</span>
                 </div>
               </div>
-              <div className="setting-item">
-                <div className="setting-info">
-                  <span className="setting-label">Backend Status</span>
-                  <span className="setting-description">
-                    {backendStatus.running ? (
-                      <span className="status-badge running">Running on port {backendStatus.port}</span>
-                    ) : (
-                      <span className="status-badge stopped">Stopped</span>
-                    )}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         );
@@ -335,7 +369,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
           <div className="settings-tab-content">
             <h2>API Keys</h2>
             <p className="tab-description">
-              Your API keys are stored securely in the macOS Keychain.
+              Your API keys are stored securely with AES-256 encryption.
             </p>
             <div className="settings-group">
               {API_KEYS.map(key => (
@@ -373,7 +407,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                       {saving[key.id] ? 'Saving...' : 'Save'}
                     </button>
                     {keyStatus[key.id] && (
-                      <button className="btn-danger" onClick={() => deleteApiKey(key.id)}>
+                      <button className="btn-danger" onClick={() => handleDeleteApiKey(key.id)}>
                         Delete
                       </button>
                     )}
@@ -383,27 +417,6 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                   </a>
                 </div>
               ))}
-              <div className="setting-item" style={{ borderTop: '1px solid #363a4f', paddingTop: '16px', marginTop: '8px' }}>
-                <div className="setting-info">
-                  <span className="setting-label">Apply Changes</span>
-                  <span className="setting-description">Restart the backend to apply new API keys</span>
-                </div>
-                <button
-                  className="btn-secondary"
-                  onClick={async () => {
-                    try {
-                      const backendPath = await invoke('get_python_backend_path');
-                      await invoke('restart_backend', { pythonBackendPath: backendPath || '' });
-                      alert('Backend restarted successfully');
-                    } catch (err) {
-                      console.error('Failed to restart backend:', err);
-                      alert(`Failed to restart: ${err}`);
-                    }
-                  }}
-                >
-                  Restart Backend
-                </button>
-              </div>
             </div>
           </div>
         );
@@ -428,6 +441,11 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                     Reveal in Finder
                   </button>
                 )}
+                {vaultPath && (
+                  <button className="btn-secondary" onClick={handleSyncVault} disabled={syncing}>
+                    {syncing ? 'Syncing...' : 'Sync Vault'}
+                  </button>
+                )}
                 <button className="btn-primary" onClick={() => {
                   onClose();
                   if (onResetVault) onResetVault();
@@ -435,6 +453,25 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                   Switch Vault
                 </button>
               </div>
+              {syncResult && (
+                <div className={`sync-result ${syncResult.error ? 'error' : 'success'}`}>
+                  {syncResult.error ? (
+                    <span>{syncResult.error}</span>
+                  ) : (
+                    <div className="sync-stats">
+                      <span>Sync complete!</span>
+                      {syncResult.attachments && (
+                        <ul>
+                          <li>Images: {syncResult.attachments.added} added, {syncResult.attachments.updated || 0} updated, {syncResult.attachments.removed} removed</li>
+                          <li>Research: {syncResult.research?.count || 0} files</li>
+                          <li>Notes: {syncResult.notes?.count || 0} files</li>
+                          <li>Styles: {syncResult.styles?.count || 0} files</li>
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="vault-structure">
                 <span className="setting-label">Vault contains:</span>
                 <ul>
@@ -472,7 +509,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                           </div>
                           <div className="brand-actions">
                             <button className="btn-secondary" onClick={() => editBrand(brand)}>Edit</button>
-                            <button className="btn-danger" onClick={() => deleteBrand(brand.id)}>Delete</button>
+                            <button className="btn-danger" onClick={() => handleDeleteBrand(brand.id)}>Delete</button>
                           </div>
                         </div>
                       ))}
@@ -624,6 +661,13 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
           {renderTabContent()}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        message={deleteConfirm.message}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 }

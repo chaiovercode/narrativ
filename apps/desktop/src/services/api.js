@@ -65,6 +65,17 @@ export async function deleteImages(id) {
   return true;
 }
 
+export async function updateImages(id, board) {
+  const response = await fetch(`${API_BASE}/boards/images/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(board),
+  });
+  if (!response.ok) throw new Error('Failed to update images');
+  const data = await response.json();
+  return data.board;
+}
+
 // =============================================================================
 // Vault
 // =============================================================================
@@ -85,9 +96,15 @@ export async function setVaultPath(path) {
 // =============================================================================
 
 export async function fetchNotes() {
+  console.log('[API] Fetching notes from', `${API_BASE}/notes`);
   const response = await fetch(`${API_BASE}/notes`);
-  if (!response.ok) throw new Error('Failed to fetch notes');
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('[API] fetchNotes failed:', response.status, text);
+    throw new Error('Failed to fetch notes');
+  }
   const data = await response.json();
+  console.log('[API] fetchNotes result:', data);
   return data.notes;
 }
 
@@ -108,4 +125,79 @@ export async function deleteNoteApi(id) {
   });
   if (!response.ok) throw new Error('Failed to delete note');
   return true;
+}
+
+export async function moveNoteApi(id, folder) {
+  const response = await fetch(`${API_BASE}/notes/${id}/move`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder }),
+  });
+  if (!response.ok) throw new Error('Failed to move note');
+  const data = await response.json();
+  return data.note;
+}
+
+// =============================================================================
+// FOLDERS API
+// =============================================================================
+
+export async function fetchFolders() {
+  console.log('[API] Fetching folders from', `${API_BASE}/folders`);
+  const response = await fetch(`${API_BASE}/folders`);
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('[API] fetchFolders failed:', response.status, text);
+    throw new Error('Failed to fetch folders');
+  }
+  const data = await response.json();
+  console.log('[API] fetchFolders result:', data);
+  return data.folders;
+}
+
+export async function createFolderApi(name, parent = '') {
+  console.log('[API] Creating folder:', name, 'parent:', parent);
+  const response = await fetch(`${API_BASE}/folders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, parent }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('[API] createFolder failed:', response.status, text);
+    throw new Error('Failed to create folder');
+  }
+  const data = await response.json();
+  console.log('[API] createFolder result:', data);
+  return data.folder;
+}
+
+export async function deleteFolderApi(path) {
+  const response = await fetch(`${API_BASE}/folders/${encodeURIComponent(path)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete folder');
+  return true;
+}
+
+export async function renameFolderApi(path, newName) {
+  const response = await fetch(`${API_BASE}/folders/${encodeURIComponent(path)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!response.ok) throw new Error('Failed to rename folder');
+  const data = await response.json();
+  return data.folder;
+}
+
+export async function moveFolderApi(path, newParent) {
+  const response = await fetch(`${API_BASE}/folders/${encodeURIComponent(path)}/move`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parent: newParent }),
+  });
+  if (!response.ok) throw new Error('Failed to move folder');
+  const data = await response.json();
+  return data.folder;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ConfirmModal } from './ConfirmModal';
 
 export function BoardsView({
@@ -16,17 +16,20 @@ export function BoardsView({
   onDownloadAll,
   onReviewForRegenerate,
   onDeleteResearch,
-  onDeleteImages
+  onDeleteImages,
+  onDeleteSingleImage,
+  onAddMoreSlides,
+  onUpdateResearch
 }) {
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, id: null, imageIndex: null });
 
-  const handleDeleteRequest = (e, type, id) => {
+  const handleDeleteRequest = (e, type, id, imageIndex = null) => {
     e.stopPropagation();
-    setConfirmModal({ isOpen: true, type, id });
+    setConfirmModal({ isOpen: true, type, id, imageIndex });
   };
 
   const handleConfirmDelete = () => {
-    const { type, id } = confirmModal;
+    const { type, id, imageIndex } = confirmModal;
     if (type === 'image') {
       onDeleteImages(id);
       if (selectedBoard?.id === id) {
@@ -37,12 +40,21 @@ export function BoardsView({
       if (selectedResearchBoard?.id === id) {
         setSelectedResearchBoard(null);
       }
+    } else if (type === 'single-image' && onDeleteSingleImage) {
+      onDeleteSingleImage(id, imageIndex);
     }
-    setConfirmModal({ isOpen: false, type: null, id: null });
+    setConfirmModal({ isOpen: false, type: null, id: null, imageIndex: null });
   };
 
   const handleCancelDelete = () => {
-    setConfirmModal({ isOpen: false, type: null, id: null });
+    setConfirmModal({ isOpen: false, type: null, id: null, imageIndex: null });
+  };
+
+  const getConfirmMessage = () => {
+    if (confirmModal.type === 'image') return 'Delete this entire board?';
+    if (confirmModal.type === 'research') return 'Delete this research?';
+    if (confirmModal.type === 'single-image') return 'Delete this image?';
+    return 'Are you sure?';
   };
 
   return (
@@ -78,6 +90,7 @@ export function BoardsView({
           onDownloadImage={onDownloadImage}
           onDownloadAll={onDownloadAll}
           onDeleteRequest={(e, id) => handleDeleteRequest(e, 'image', id)}
+          onDeleteSingleImage={(e, id, idx) => handleDeleteRequest(e, 'single-image', id, idx)}
         />
       ) : (
         <ResearchBoardsContent
@@ -87,12 +100,14 @@ export function BoardsView({
           selectedStyle={selectedStyle}
           onReviewForRegenerate={onReviewForRegenerate}
           onDeleteRequest={(e, id) => handleDeleteRequest(e, 'research', id)}
+          onAddMoreSlides={onAddMoreSlides}
+          onUpdateResearch={onUpdateResearch}
         />
       )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        message={confirmModal.type === 'image' ? 'Delete this image board?' : 'Delete this research?'}
+        message={getConfirmMessage()}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
@@ -107,7 +122,8 @@ function ImageBoardsContent({
   onImageClick,
   onDownloadImage,
   onDownloadAll,
-  onDeleteRequest
+  onDeleteRequest,
+  onDeleteSingleImage
 }) {
   if (savedImageBoards.length === 0) {
     return (
@@ -149,9 +165,7 @@ function ImageBoardsContent({
           {selectedBoard.images.map((img, idx) => (
             <div key={idx} className="grid-item">
               <img src={img} alt="" onClick={() => onImageClick({ src: img, idx, board: selectedBoard })} />
-              <div className="grid-overlay" onClick={() => onImageClick({ src: img, idx, board: selectedBoard })}>
-                <h3>Slide {idx + 1}</h3>
-              </div>
+
               <button
                 className="grid-download-btn"
                 onClick={(e) => { e.stopPropagation(); onDownloadImage(img, idx); }}
@@ -160,6 +174,16 @@ function ImageBoardsContent({
                   <path d="M8 2v8m0 0l-3-3m3 3l3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
+              {selectedBoard.images.length > 1 && (
+                <button
+                  className="grid-delete-btn"
+                  onClick={(e) => onDeleteSingleImage(e, selectedBoard.id, idx)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -197,10 +221,114 @@ function ResearchBoardsContent({
   setSelectedResearchBoard,
   selectedStyle,
   onReviewForRegenerate,
-  onDeleteRequest
+  onDeleteRequest,
+  onAddMoreSlides,
+  onUpdateResearch
 }) {
+  const [additionalSlides, setAdditionalSlides] = useState(0);
+  const [isAddingSlides, setIsAddingSlides] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [localResearch, setLocalResearch] = useState(null);
+
+  // Sync local state with selected research
+  useEffect(() => {
+    if (selectedResearchBoard) {
+      setLocalResearch({ ...selectedResearchBoard });
+    } else {
+      setLocalResearch(null);
+    }
+  }, [selectedResearchBoard?.id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
+
   // Use selected style if available, otherwise fall back to saved aesthetic
   const displayAesthetic = selectedStyle || selectedResearchBoard?.aesthetic;
+
+  // Calculate max additional slides (10 - current)
+  const currentSlideCount = selectedResearchBoard?.slides?.length || 0;
+  const maxAdditional = Math.max(0, 10 - currentSlideCount);
+
+  // Handle adding more slides
+  const handleAddSlides = async () => {
+    if (additionalSlides <= 0 || !onAddMoreSlides) return;
+    setIsAddingSlides(true);
+    try {
+      await onAddMoreSlides(selectedResearchBoard, additionalSlides);
+      setAdditionalSlides(0);
+    } finally {
+      setIsAddingSlides(false);
+    }
+  };
+
+  const handleSelectSlides = (num) => {
+    setAdditionalSlides(num);
+    setDropdownOpen(false);
+  };
+
+  // Edit a slide field
+  const handleEditSlide = (slideIndex, field, value) => {
+    if (!localResearch) return;
+    const updatedSlides = [...localResearch.slides];
+    updatedSlides[slideIndex] = { ...updatedSlides[slideIndex], [field]: value };
+    const updated = { ...localResearch, slides: updatedSlides };
+    setLocalResearch(updated);
+    // Save to backend
+    if (onUpdateResearch) {
+      onUpdateResearch(updated);
+    }
+  };
+
+  // Delete a slide
+  const handleDeleteSlide = (slideIndex) => {
+    if (!localResearch || localResearch.slides.length <= 1) return;
+    const updatedSlides = localResearch.slides.filter((_, idx) => idx !== slideIndex);
+    // Renumber slides
+    updatedSlides.forEach((slide, idx) => {
+      slide.slide_number = idx + 1;
+    });
+    const updated = { ...localResearch, slides: updatedSlides };
+    setLocalResearch(updated);
+    setSelectedResearchBoard(updated);
+    // Save to backend
+    if (onUpdateResearch) {
+      onUpdateResearch(updated);
+    }
+  };
+
+  // Add a new blank slide
+  const handleAddBlankSlide = () => {
+    if (!localResearch || localResearch.slides.length >= 10) return;
+    const newSlideNumber = localResearch.slides.length + 1;
+    const newSlide = {
+      slide_number: newSlideNumber,
+      title: 'New Scene',
+      key_fact: 'Add your fact here...',
+      visual_description: 'Describe the visual scene...'
+    };
+    const updated = { ...localResearch, slides: [...localResearch.slides, newSlide] };
+    setLocalResearch(updated);
+    setSelectedResearchBoard(updated);
+    // Save to backend
+    if (onUpdateResearch) {
+      onUpdateResearch(updated);
+    }
+  };
+
+  // Use local research for display if available
+  const displayResearch = localResearch || selectedResearchBoard;
+
   if (savedResearch.length === 0) {
     return (
       <div className="empty-state">
@@ -210,7 +338,10 @@ function ResearchBoardsContent({
     );
   }
 
-  if (selectedResearchBoard) {
+  if (displayResearch) {
+    const slideCount = displayResearch.slides?.length || 0;
+    const canAddMore = slideCount < 10;
+
     return (
       <div className="research-detail">
         <div className="board-detail-header">
@@ -220,18 +351,18 @@ function ResearchBoardsContent({
             </svg>
             Back
           </button>
-          <h2>{selectedResearchBoard.topic}</h2>
+          <h2>{displayResearch.topic}</h2>
           <div className="board-detail-actions">
             <button
               className="download-all-btn"
               onClick={() => onReviewForRegenerate({
-                ...selectedResearchBoard,
+                ...displayResearch,
                 aesthetic: displayAesthetic
               })}
             >
-              Conjure Visuals
+              Review
             </button>
-            <button className="delete-btn" onClick={(e) => onDeleteRequest(e, selectedResearchBoard.id)}>
+            <button className="delete-btn" onClick={(e) => onDeleteRequest(e, displayResearch.id)}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -241,26 +372,108 @@ function ResearchBoardsContent({
 
         <div className="research-detail-content">
           <div className="research-detail-section">
-            <label>Scenes</label>
+            <div className="scenes-header">
+              <label>Scenes ({slideCount}/10)</label>
+              {maxAdditional > 0 && onAddMoreSlides && (
+                <div className="add-slides-control">
+                  <div ref={dropdownRef} className={`custom-dropdown ${dropdownOpen ? 'open' : ''}`}>
+                    <button
+                      className="dropdown-trigger"
+                      onClick={() => !isAddingSlides && setDropdownOpen(!dropdownOpen)}
+                      disabled={isAddingSlides}
+                    >
+                      {additionalSlides > 0 ? `+${additionalSlides} AI scene${additionalSlides > 1 ? 's' : ''}` : 'AI Generate...'}
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    {dropdownOpen && (
+                      <div className="dropdown-menu">
+                        {Array.from({ length: maxAdditional }, (_, i) => i + 1).map(num => (
+                          <button
+                            key={num}
+                            className={`dropdown-item ${additionalSlides === num ? 'selected' : ''}`}
+                            onClick={() => handleSelectSlides(num)}
+                          >
+                            +{num} AI scene{num > 1 ? 's' : ''}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {additionalSlides > 0 && (
+                    <button
+                      className="add-slides-btn"
+                      onClick={handleAddSlides}
+                      disabled={isAddingSlides}
+                    >
+                      {isAddingSlides ? 'Adding...' : `Add ${additionalSlides}`}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="research-detail-slides">
-              {selectedResearchBoard.slides?.map((slide, idx) => (
+              {displayResearch.slides?.map((slide, idx) => (
                 <div key={idx} className="research-detail-slide">
                   <div className="slide-header">
                     <span className="slide-num">{slide.slide_number}</span>
-                    <h4>{slide.title}</h4>
+                    <h4
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handleEditSlide(idx, 'title', e.target.innerText)}
+                      className="editable-title"
+                    >
+                      {slide.title}
+                    </h4>
+                    {slideCount > 1 && (
+                      <button
+                        className="slide-delete-btn"
+                        onClick={() => handleDeleteSlide(idx)}
+                        title="Delete scene"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                          <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                  <p className="slide-fact">{slide.key_fact}</p>
-                  <p className="slide-visual">{slide.visual_description}</p>
+                  <p
+                    className="slide-fact editable-field"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleEditSlide(idx, 'key_fact', e.target.innerText)}
+                  >
+                    {slide.key_fact}
+                  </p>
+                  <p
+                    className="slide-visual editable-field"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleEditSlide(idx, 'visual_description', e.target.innerText)}
+                  >
+                    {slide.visual_description}
+                  </p>
                 </div>
               ))}
+
+              {/* Add Scene Button */}
+              {canAddMore && (
+                <button className="add-scene-btn" onClick={handleAddBlankSlide}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  Add Scene Manually
+                </button>
+              )}
             </div>
           </div>
 
-          {selectedResearchBoard.sources?.length > 0 && (
+          {displayResearch.sources?.length > 0 && (
             <div className="research-detail-section">
-              <label>Sources ({selectedResearchBoard.sources.length})</label>
+              <label>Sources ({displayResearch.sources.length})</label>
               <div className="research-detail-sources">
-                {selectedResearchBoard.sources.map((src, idx) => (
+                {displayResearch.sources.map((src, idx) => (
                   <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" className="source-link">
                     {src.title}
                   </a>

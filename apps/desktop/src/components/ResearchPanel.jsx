@@ -14,17 +14,16 @@ export function ResearchPanel({
   };
 
   return (
-    <>
+    <div className={`research-panel ${researchCollapsed ? 'collapsed' : 'expanded'}`}>
       <button
-        className={`research-toggle ${researchCollapsed ? '' : 'expanded'}`}
+        className="research-toggle"
         onClick={() => setResearchCollapsed(!researchCollapsed)}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      <div className={`research-panel ${researchCollapsed ? 'collapsed' : 'expanded'}`}>
-        <div className="research-panel-content">
+      <div className="research-panel-content">
           <div className="research-panel-header">
             <h3>Refine & Conjure</h3>
             <span className="research-topic">{completedResearch.topic}</span>
@@ -85,7 +84,6 @@ export function ResearchPanel({
             Conjure Again
           </button>
         </div>
-      </div>
-    </>
+    </div>
   );
 }

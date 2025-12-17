@@ -1,135 +1,116 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useNotes } from '../../hooks/useNotes';
-import { useBoards } from '../../hooks/useBoards';
+import { useState, useCallback } from 'react';
 import NotesList from './NotesList';
-import NoteEditor from './NoteEditor';
 import '../../styles/notes-panel.css';
 
 /**
- * Main notes panel that slides out from the sidebar.
- * Contains list view and editor view.
+ * Notes panel sidebar - shows list of notes with folder tree.
+ * Note editing happens in NoteContentView in the main area.
  */
-function NotesPanel({ isOpen, onClose }) {
-  const { notes, loading, createNote, updateNote, removeNote, searchNotes, refreshNotes } = useNotes();
-  const { savedResearch } = useBoards();
-  const [view, setView] = useState('list'); // 'list' or 'editor'
-  const [activeNote, setActiveNote] = useState(null);
+function NotesPanel({
+  isOpen,
+  onClose,
+  notes = [],
+  folders = [],
+  loading,
+  selectedNote,
+  onSelectNote,
+  onNewNote,
+  onDeleteNote,
+  onCreateFolder,
+  onDeleteFolder,
+  onRenameFolder,
+  onMoveNote,
+  onMoveFolder,
+  onRenameNote,
+  onRefresh,
+  searchNotes,
+  getTreeStructure,
+}) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Refresh notes when panel opens
-  useEffect(() => {
-    if (isOpen) {
-      refreshNotes();
+  // Handle new folder creation
+  const handleNewFolder = useCallback(async () => {
+    if (!onCreateFolder) return;
+    try {
+      await onCreateFolder('New Folder', '');
+      // Refresh to show the new folder
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Failed to create folder:', err);
     }
-  }, [isOpen, refreshNotes]);
+  }, [onCreateFolder, onRefresh]);
 
-  // Handle creating a new note
-  const handleNewNote = useCallback(() => {
-    setActiveNote(null);
-    setView('editor');
-  }, []);
+  // Handle sync/refresh
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh) return;
+    try {
+      await onRefresh();
+    } catch (err) {
+      console.error('Failed to refresh notes:', err);
+    }
+  }, [onRefresh]);
 
-  // Handle selecting a note to edit
+  // Handle note selection
   const handleSelectNote = useCallback((note) => {
-    setActiveNote(note);
-    setView('editor');
-  }, []);
-
-  // Handle saving a note (create or update)
-  const handleSaveNote = useCallback(
-    async (noteData) => {
-      try {
-        if (activeNote?.id) {
-          // Update existing note
-          const saved = await updateNote(activeNote.id, noteData);
-          setActiveNote(saved);
-          return saved;
-        } else {
-          // Create new note
-          const saved = await createNote(noteData);
-          setActiveNote(saved);
-          return saved;
-        }
-      } catch (err) {
-        console.error('Failed to save note:', err);
-        throw err;
-      }
-    },
-    [activeNote, createNote, updateNote]
-  );
-
-  // Handle deleting a note
-  const handleDeleteNote = useCallback(
-    async (id) => {
-      try {
-        await removeNote(id);
-        setActiveNote(null);
-        setView('list');
-      } catch (err) {
-        console.error('Failed to delete note:', err);
-      }
-    },
-    [removeNote]
-  );
-
-  // Handle going back to list
-  const handleBack = useCallback(() => {
-    setActiveNote(null);
-    setView('list');
-  }, []);
-
-  // Get filtered notes based on search
-  const filteredNotes = searchQuery ? searchNotes(searchQuery) : notes;
+    onSelectNote(note);
+  }, [onSelectNote]);
 
   return (
     <div className={`notes-panel ${isOpen ? 'open' : ''}`}>
       <div className="notes-panel-header">
         <h3>Notes</h3>
         <div className="header-actions">
-          {view === 'list' && (
-            <>
-              <button
-                className="refresh-btn"
-                onClick={refreshNotes}
-                title="Refresh notes"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 4v6h-6M1 20v-6h6" />
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                </svg>
-              </button>
-              <button className="new-note-btn" onClick={handleNewNote}>
-                + New
-              </button>
-            </>
-          )}
-          <button className="notes-close-btn" onClick={onClose} title="Close">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
+          <button
+            className="header-icon-btn"
+            onClick={handleRefresh}
+            title="Sync notes"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={handleNewFolder}
+            title="New folder"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 10v6m-3-3h6" />
+              <path d="M3 7a2 2 0 012-2h3.93a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={onNewNote}
+            title="New note"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 8v8m-4-4h8" />
+              <rect x="4" y="3" width="16" height="18" rx="2" />
             </svg>
           </button>
         </div>
       </div>
 
       <div className="notes-panel-content">
-        {view === 'list' ? (
-          <NotesList
-            notes={filteredNotes}
-            loading={loading}
-            searchQuery={searchQuery}
-            onSearch={setSearchQuery}
-            onSelectNote={handleSelectNote}
-            onDeleteNote={handleDeleteNote}
-          />
-        ) : (
-          <NoteEditor
-            note={activeNote}
-            onSave={handleSaveNote}
-            onDelete={handleDeleteNote}
-            onBack={handleBack}
-            researchBoards={savedResearch}
-          />
-        )}
+        <NotesList
+          notes={notes}
+          folders={folders}
+          loading={loading}
+          searchQuery={searchQuery}
+          onSearch={setSearchQuery}
+          onSelectNote={handleSelectNote}
+          onDeleteNote={onDeleteNote}
+          onCreateFolder={onCreateFolder}
+          onDeleteFolder={onDeleteFolder}
+          onRenameFolder={onRenameFolder}
+          onMoveNote={onMoveNote}
+          onMoveFolder={onMoveFolder}
+          onRenameNote={onRenameNote}
+          selectedNoteId={selectedNote?.id}
+          getTreeStructure={getTreeStructure}
+        />
       </div>
     </div>
   );

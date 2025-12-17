@@ -43,106 +43,57 @@ def slugify(text):
 
 
 # Predefined styles with full JSON structure
+# CURATED: Only styles where AI text generation works reliably
 PREDEFINED_STYLES = {
+    "pop_art": {
+        "id": "pop_art",
+        "name": "Pop Art / Comic",
+        "art_style": "bold pop art comic book illustration with strong outlines and dynamic composition",
+        "color_palette": "primary red #FF0000, bright yellow #FFFF00, bold blue #0000FF, jet black #000000",
+        "lighting": "flat bold lighting with strong black outlines, no gradients",
+        "texture": "halftone dots, Ben-Day dots, bold outlines, flat color fills",
+        "typography_style": "BOLD ALL-CAPS comic book lettering with thick black outline",
+        "background_style": "bright solid colors or classic halftone dot patterns"
+    },
     "cinematic": {
         "id": "cinematic",
         "name": "Cinematic",
-        "art_style": "cinematic film photography with dramatic composition",
+        "art_style": "cinematic film photography with dramatic movie poster composition",
         "color_palette": "rich blacks #1a1a1a, warm highlights #f5d6a8, deep shadows #2d2d2d, accent gold #d4af37",
         "lighting": "dramatic chiaroscuro lighting with strong contrast and rim lights",
         "texture": "film grain, smooth gradients, soft focus backgrounds",
-        "typography_style": "bold sans-serif in white with subtle drop shadow",
-        "background_style": "depth-of-field blur with bokeh highlights"
-    },
-    "vintage": {
-        "id": "vintage",
-        "name": "Vintage",
-        "art_style": "retro vintage illustration with aged paper aesthetic",
-        "color_palette": "sepia brown #8B7355, cream white #FFFDD0, faded red #CD5C5C, antique gold #CFB53B",
-        "lighting": "soft diffused warm lighting like old photographs",
-        "texture": "weathered paper, slight vignette, film scratches",
-        "typography_style": "serif typewriter font in dark brown with ink stamp effect",
-        "background_style": "aged parchment with subtle stains and fold marks"
-    },
-    "cyberpunk": {
-        "id": "cyberpunk",
-        "name": "Cyberpunk",
-        "art_style": "neon-lit cyberpunk digital art with futuristic elements",
-        "color_palette": "electric cyan #00FFFF, hot magenta #FF00FF, deep purple #4B0082, neon pink #FF1493",
-        "lighting": "neon glow with harsh shadows, holographic reflections",
-        "texture": "chrome surfaces, rain-slicked streets, digital glitch effects",
-        "typography_style": "futuristic angular font in neon colors with glow effect",
-        "background_style": "dark urban cityscape with neon signs and rain"
+        "typography_style": "bold sans-serif movie poster text in white with drop shadow",
+        "background_style": "depth-of-field blur with cinematic bokeh highlights"
     },
     "minimalist": {
         "id": "minimalist",
         "name": "Minimalist",
-        "art_style": "clean minimalist design with ample white space",
+        "art_style": "ultra-clean minimalist design with maximum white space and clarity",
         "color_palette": "pure white #FFFFFF, charcoal black #36454F, accent blue #4169E1, soft gray #D3D3D3",
-        "lighting": "soft even lighting with minimal shadows",
-        "texture": "smooth flat surfaces, subtle gradients",
-        "typography_style": "thin modern sans-serif in black, left-aligned",
-        "background_style": "solid white or very subtle gradient"
-    },
-    "watercolor": {
-        "id": "watercolor",
-        "name": "Watercolor",
-        "art_style": "soft watercolor painting with organic brush strokes",
-        "color_palette": "soft pink #FFB6C1, sky blue #87CEEB, mint green #98FB98, lavender #E6E6FA",
-        "lighting": "soft natural daylight with gentle shadows",
-        "texture": "watercolor paper grain, paint bleeds, soft edges",
-        "typography_style": "handwritten script in dark ink with watercolor splash",
-        "background_style": "wet-on-wet watercolor wash with organic shapes"
-    },
-    "dark_fantasy": {
-        "id": "dark_fantasy",
-        "name": "Dark Fantasy",
-        "art_style": "gothic dark fantasy illustration with mystical elements",
-        "color_palette": "midnight blue #191970, blood red #8B0000, silver #C0C0C0, emerald #50C878",
-        "lighting": "dramatic moonlight with ethereal glows and deep shadows",
-        "texture": "stone, mist, ancient runes, magical particles",
-        "typography_style": "ornate gothic font in silver with subtle glow",
-        "background_style": "misty dark forests or ancient castle ruins"
-    },
-    "pop_art": {
-        "id": "pop_art",
-        "name": "Pop Art",
-        "art_style": "bold pop art style with comic book influence",
-        "color_palette": "primary red #FF0000, yellow #FFFF00, blue #0000FF, black #000000",
-        "lighting": "flat bold lighting with strong outlines",
-        "texture": "halftone dots, bold outlines, flat color fills",
-        "typography_style": "comic book style bold letters with outline",
-        "background_style": "bright solid colors or halftone patterns"
+        "lighting": "soft even lighting with minimal shadows, clean and bright",
+        "texture": "smooth flat surfaces, subtle gradients, no noise",
+        "typography_style": "clean modern sans-serif in black, perfectly legible",
+        "background_style": "solid white or very subtle gradient, maximum contrast for text"
     },
     "anime": {
         "id": "anime",
-        "name": "Anime",
-        "art_style": "Japanese anime illustration style with vibrant colors",
+        "name": "Anime / Manga",
+        "art_style": "vibrant Japanese anime manga illustration with dynamic energy",
         "color_palette": "sakura pink #FFB7C5, ocean blue #0077BE, sunset orange #FF7F50, grass green #7CFC00",
-        "lighting": "cel-shaded lighting with dramatic highlights",
-        "texture": "smooth anime cel shading, speed lines for action",
-        "typography_style": "bold Japanese-inspired font with dynamic angles",
-        "background_style": "detailed anime backgrounds with dramatic skies"
+        "lighting": "cel-shaded lighting with dramatic highlights and speed effects",
+        "texture": "smooth anime cel shading, speed lines, action effects",
+        "typography_style": "bold manga-style impact text with dynamic angles and effects",
+        "background_style": "detailed anime backgrounds with dramatic skies and effects"
     },
-    "nature": {
-        "id": "nature",
-        "name": "Nature",
-        "art_style": "photorealistic nature photography with vivid details",
-        "color_palette": "forest green #228B22, earth brown #8B4513, sky blue #87CEEB, sunset gold #FFD700",
-        "lighting": "golden hour natural sunlight with warm tones",
-        "texture": "organic textures, leaves, bark, water ripples",
-        "typography_style": "clean sans-serif in white with nature-inspired accent",
-        "background_style": "lush natural landscapes with depth"
-    },
-    "neon_glow": {
-        "id": "neon_glow",
-        "name": "Neon Glow",
-        "art_style": "vibrant neon aesthetic with glowing elements",
-        "color_palette": "neon green #39FF14, electric blue #7DF9FF, hot pink #FF69B4, purple #9400D3",
-        "lighting": "intense neon glow against dark backgrounds",
-        "texture": "smooth glass, reflective surfaces, light trails",
-        "typography_style": "neon tube font with bright glow and reflection",
-        "background_style": "dark void with neon light sources"
+    "cyberpunk": {
+        "id": "cyberpunk",
+        "name": "Cyberpunk / Neon",
+        "art_style": "neon-lit cyberpunk digital art with glowing futuristic elements",
+        "color_palette": "electric cyan #00FFFF, hot magenta #FF00FF, deep purple #4B0082, neon pink #FF1493",
+        "lighting": "neon glow with harsh shadows, holographic reflections, light bloom",
+        "texture": "chrome surfaces, rain-slicked streets, digital glitch effects",
+        "typography_style": "glowing neon tube text in cyan or pink with bright glow effect",
+        "background_style": "dark urban cityscape with neon signs and rain reflections"
     }
 }
 
@@ -336,7 +287,7 @@ Example output:
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-3-flash',
             contents=[
                 {
                     "parts": [

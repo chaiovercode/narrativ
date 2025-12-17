@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import Create from './pages/Create';
 import Gallery from './pages/Gallery';
 import VaultSetup from './pages/VaultSetup';
 import SettingsModal from './components/SettingsModal';
 import NotesPanel from './components/notes/NotesPanel';
+import NoteContentView from './components/notes/NoteContentView';
 import StatusBar from './components/StatusBar';
+import { useNotes } from './hooks/useNotes';
+import { useBoards } from './hooks/useBoards';
 import { setVaultPath as setBackendVaultPath } from './services/api';
 import './App.css';
 import './styles/status-bar.css';
+import './styles/note-content.css';
 
 // Obsidian-style icons
 const Icons = {
@@ -51,13 +55,108 @@ const Icons = {
 
 function App() {
   const [activeView, setActiveView] = useState('create');
-  const [backendStatus, setBackendStatus] = useState({ running: false, port: 8000 });
   const [vaultPath, setVaultPath] = useState(null);
   const [vaultName, setVaultName] = useState(null);
   const [vaultLoading, setVaultLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [showVaultPicker, setShowVaultPicker] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [openResearchTopic, setOpenResearchTopic] = useState(null);
+
+  // Notes hooks for split view
+  const {
+    notes,
+    folders,
+    loading: notesLoading,
+    createNote,
+    updateNote,
+    removeNote,
+    createFolder,
+    removeFolder,
+    renameFolder,
+    moveFolder,
+    moveNote,
+    searchNotes,
+    refreshNotes,
+    getTreeStructure,
+  } = useNotes();
+  const { savedResearch, refreshBoards } = useBoards();
+
+  // Refresh notes and boards when notes panel opens
+  useEffect(() => {
+    if (notesOpen) {
+      refreshNotes();
+      refreshBoards();
+    }
+  }, [notesOpen, refreshNotes, refreshBoards]);
+
+  // Note handlers for split view
+  const handleSelectNote = useCallback((note) => {
+    setSelectedNote(note);
+  }, []);
+
+  const handleNewNote = useCallback(async () => {
+    // Generate unique "Untitled" name
+    const existingTitles = new Set(notes.map(n => n.title?.toLowerCase() || ''));
+    let title = 'Untitled';
+    let counter = 1;
+    while (existingTitles.has(title.toLowerCase())) {
+      title = `Untitled ${counter}`;
+      counter++;
+    }
+
+    // Create the note immediately
+    try {
+      const saved = await createNote({ title, content: '' });
+      setSelectedNote(saved);
+    } catch (err) {
+      console.error('Failed to create note:', err);
+    }
+  }, [notes, createNote]);
+
+  const handleSaveNote = useCallback(
+    async (noteData) => {
+      try {
+        if (selectedNote?.id) {
+          const saved = await updateNote(selectedNote.id, noteData);
+          setSelectedNote(saved);
+          return saved;
+        } else {
+          const saved = await createNote(noteData);
+          setSelectedNote(saved);
+          return saved;
+        }
+      } catch (err) {
+        console.error('Failed to save note:', err);
+        throw err;
+      }
+    },
+    [selectedNote, createNote, updateNote]
+  );
+
+  const handleDeleteNote = useCallback(
+    async (id) => {
+      try {
+        await removeNote(id);
+        setSelectedNote(null);
+      } catch (err) {
+        console.error('Failed to delete note:', err);
+      }
+    },
+    [removeNote]
+  );
+
+  // Handle opening research from wiki-links
+  const handleOpenResearch = useCallback((topic) => {
+    // Close notes panel and switch to create view
+    setNotesOpen(false);
+    setSelectedNote(null);
+    setActiveView('create');
+    // Set the topic to open
+    setOpenResearchTopic(topic);
+  }, []);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -72,6 +171,7 @@ function App() {
         setActiveView('create');
         setSettingsOpen(false);
         setNotesOpen(false);
+        setSelectedNote(null);
       }
       // Cmd+G for Gallery
       if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
@@ -79,6 +179,7 @@ function App() {
         setActiveView('gallery');
         setSettingsOpen(false);
         setNotesOpen(false);
+        setSelectedNote(null);
       }
       // Cmd+Shift+N for Notes panel
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'n') {
@@ -122,32 +223,25 @@ function App() {
     checkVault();
   }, []);
 
-  // Check backend status periodically and ensure vault path is set
+  // Ensure vault path is set when backend becomes ready
   useEffect(() => {
     let vaultPathSent = false;
 
-    const checkBackend = async () => {
-      try {
-        const status = await invoke('get_backend_status');
-        setBackendStatus(status);
+    const syncVaultPath = async () => {
+      if (vaultPathSent || !vaultPath) return;
 
-        // When backend becomes ready, ensure vault path is set
-        if (status.running && vaultPath && !vaultPathSent) {
-          try {
-            await setBackendVaultPath(vaultPath);
-            vaultPathSent = true;
-            console.log('Vault path sent to backend:', vaultPath);
-          } catch (err) {
-            console.warn('Failed to send vault path to backend:', err);
-          }
-        }
+      try {
+        // Try to set vault path directly - this verifies backend is reachable
+        await setBackendVaultPath(vaultPath);
+        vaultPathSent = true;
+        console.log('Successfully synced vault path to backend');
       } catch (err) {
-        console.log('Backend check failed:', err);
+        // Backend not ready/reachable yet, will retry
       }
     };
 
-    checkBackend();
-    const interval = setInterval(checkBackend, 3000);
+    syncVaultPath();
+    const interval = setInterval(syncVaultPath, 2000);
     return () => clearInterval(interval);
   }, [vaultPath]);
 
@@ -193,27 +287,47 @@ function App() {
   }
 
   const renderView = () => {
-    switch (activeView) {
-      case 'create':
-        return <Create />;
-      case 'gallery':
-        return <Gallery />;
-      default:
-        return <Create />;
-    }
+    // Always render Create to preserve generation state, hide when not active
+    const showCreate = activeView === 'create' && !notesOpen;
+    const showGallery = activeView === 'gallery' && !notesOpen;
+    const showNotes = notesOpen;
+
+    return (
+      <>
+        {/* Create is always mounted to preserve generation state */}
+        <div style={{ display: showCreate ? 'contents' : 'none' }}>
+          <Create openResearchTopic={openResearchTopic} onResearchOpened={() => setOpenResearchTopic(null)} />
+        </div>
+
+        {/* Gallery only mounts when active */}
+        {showGallery && <Gallery />}
+
+        {/* Notes content view */}
+        {showNotes && (
+          <NoteContentView
+            note={selectedNote}
+            onSave={handleSaveNote}
+            onDelete={handleDeleteNote}
+            researchBoards={savedResearch}
+            onOpenResearch={handleOpenResearch}
+          />
+        )}
+      </>
+    );
   };
 
   return (
     <div className="app-wrapper">
-      <StatusBar backendStatus={backendStatus} />
+      <StatusBar />
       <div className="app-container">
         <aside className="app-sidebar collapsed">
           <nav className="sidebar-nav">
             <button
-              className={`nav-item ${activeView === 'create' ? 'active' : ''}`}
+              className={`nav-item ${activeView === 'create' && !notesOpen ? 'active' : ''}`}
               onClick={() => {
                 setActiveView('create');
                 setNotesOpen(false);
+                setSelectedNote(null);
               }}
               title="Create (Cmd+N)"
             >
@@ -221,10 +335,11 @@ function App() {
               {Icons.create}
             </button>
             <button
-              className={`nav-item ${activeView === 'gallery' ? 'active' : ''}`}
+              className={`nav-item ${activeView === 'gallery' && !notesOpen ? 'active' : ''}`}
               onClick={() => {
                 setActiveView('gallery');
                 setNotesOpen(false);
+                setSelectedNote(null);
               }}
               title="Gallery (Cmd+G)"
             >
@@ -258,10 +373,32 @@ function App() {
             </div>
           </div>
         </aside>
-        <main className="app-main">
+        <main className={`app-main ${notesOpen ? 'notes-open' : ''}`}>
           {renderView()}
         </main>
-        <NotesPanel isOpen={notesOpen} onClose={() => setNotesOpen(false)} />
+        <NotesPanel
+          isOpen={notesOpen}
+          onClose={() => {
+            setNotesOpen(false);
+            setSelectedNote(null);
+          }}
+          notes={notes}
+          folders={folders}
+          loading={notesLoading}
+          selectedNote={selectedNote}
+          onSelectNote={handleSelectNote}
+          onNewNote={handleNewNote}
+          onDeleteNote={handleDeleteNote}
+          onCreateFolder={createFolder}
+          onDeleteFolder={removeFolder}
+          onRenameFolder={renameFolder}
+          onMoveNote={moveNote}
+          onMoveFolder={moveFolder}
+          onRenameNote={(id, newName) => updateNote(id, { title: newName })}
+          onRefresh={refreshNotes}
+          searchNotes={searchNotes}
+          getTreeStructure={getTreeStructure}
+        />
         <SettingsModal
           isOpen={settingsOpen}
           onClose={() => setSettingsOpen(false)}

@@ -3,19 +3,24 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use rand::Rng;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
 const NONCE_SIZE: usize = 12;
-const APP_SALT: &[u8] = b"revelio_secrets_v1";
+const APP_SALT: &[u8] = b"revelio_secrets_v2_stable";
 
-/// Derive encryption key from machine ID
+/// Derive encryption key from user's home directory path (consistent across builds)
 fn get_encryption_key() -> [u8; 32] {
-    let machine_id = machine_uid::get().unwrap_or_else(|_| "fallback_id".to_string());
+    // Use home directory as the unique identifier - consistent across app versions
+    let home_dir = dirs::home_dir()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| "default_user".to_string());
+
     let mut hasher = Sha256::new();
-    hasher.update(machine_id.as_bytes());
+    hasher.update(home_dir.as_bytes());
     hasher.update(APP_SALT);
     hasher.finalize().into()
 }
@@ -26,7 +31,9 @@ fn encrypt(plaintext: &str) -> Result<String, String> {
     let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
 
     // Generate random nonce
-    let nonce_bytes: [u8; NONCE_SIZE] = rand_nonce();
+    let mut rng = rand::thread_rng();
+    let mut nonce_bytes = [0u8; NONCE_SIZE];
+    rng.fill(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher
@@ -55,23 +62,9 @@ fn decrypt(encrypted: &str) -> Result<String, String> {
 
     let plaintext = cipher
         .decrypt(nonce, ciphertext)
-        .map_err(|_| "Decryption failed".to_string())?;
+        .map_err(|_| "Decryption failed - keys may need to be re-entered".to_string())?;
 
     String::from_utf8(plaintext).map_err(|e| e.to_string())
-}
-
-/// Generate random nonce
-fn rand_nonce() -> [u8; NONCE_SIZE] {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let mut nonce = [0u8; NONCE_SIZE];
-    for (i, byte) in nonce.iter_mut().enumerate() {
-        *byte = ((now >> (i * 8)) & 0xff) as u8;
-    }
-    nonce
 }
 
 /// Get the secrets file path in the app data directory
@@ -92,6 +85,9 @@ fn read_secrets() -> HashMap<String, String> {
         if let Ok(encrypted) = fs::read_to_string(&path) {
             if let Ok(decrypted) = decrypt(&encrypted) {
                 return serde_json::from_str(&decrypted).unwrap_or_default();
+            } else {
+                // If decryption fails, the key derivation changed - clear old secrets
+                println!("Warning: Could not decrypt secrets file, may need to re-enter API keys");
             }
         }
     }

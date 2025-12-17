@@ -115,16 +115,23 @@ export function useStoryGeneration({
     }
   };
 
-  const handleConfirmPlan = async () => {
-    if (!storyPlan) return;
+  const handleConfirmPlan = async (filteredPlan = null) => {
+    // Use filtered plan if provided, otherwise use full storyPlan
+    const planToUse = filteredPlan || storyPlan;
+    console.log('[useStoryGeneration] handleConfirmPlan called:', {
+      hasFilteredPlan: !!filteredPlan,
+      filteredSlideCount: filteredPlan?.slides?.length,
+      planToUseSlideCount: planToUse?.slides?.length
+    });
+    if (!planToUse) return;
 
-    // Save research FIRST (before attempting image generation)
+    // Save FULL research (all slides) before generating
     const newResearchBoard = {
       id: Date.now(),
       topic: storyPlan.topic,
       aesthetic: storyPlan.aesthetic,
       style_name: storyPlan.style_name,
-      slides: storyPlan.slides,
+      slides: storyPlan.slides, // Save ALL slides in research
       sources: storyPlan.sources,
       caption: storyPlan.caption,
       hashtags: storyPlan.hashtags,
@@ -136,15 +143,16 @@ export function useStoryGeneration({
 
     setIsGenerating(true);
     setGeneratingPhase('images');
-    setExpectedSlides(storyPlan.slides?.length || 0);
-    setGeneratingSlides(storyPlan.slides || []);
+    // Use filtered plan's slide count for progress
+    setExpectedSlides(planToUse.slides?.length || 0);
+    setGeneratingSlides(planToUse.slides || []);
     setCurrentGeneratingSlide(1);
 
     try {
-      // Ensure image_size is included in the plan
+      // Use filtered plan for image generation
       const planWithSize = {
-        ...storyPlan,
-        image_size: storyPlan.image_size || imageSize
+        ...planToUse,
+        image_size: imageSize || planToUse.image_size || 'story'
       };
 
       const response = await fetch('http://localhost:8000/generate_from_plan', {
@@ -164,7 +172,7 @@ export function useStoryGeneration({
       // Only save images if we got some
       if (data.images && data.images.length > 0) {
         setGeneratedImages(data.images);
-        setGeneratedSlides(storyPlan.slides);
+        setGeneratedSlides(planToUse.slides); // Use filtered slides
         setStoryCaption(storyPlan.caption || '');
         setStoryHashtags(storyPlan.hashtags || []);
         setResearchCollapsed(true);
@@ -173,12 +181,12 @@ export function useStoryGeneration({
           id: Date.now(),
           topic: storyPlan.topic,
           images: data.images,
-          slides: storyPlan.slides,
+          slides: planToUse.slides, // Save only generated slides
           caption: storyPlan.caption,
           hashtags: storyPlan.hashtags,
-          aesthetic: storyPlan.aesthetic,
-          style_name: storyPlan.style_name,
-          image_size: storyPlan.image_size || imageSize,
+          aesthetic: planToUse.aesthetic || storyPlan.aesthetic,
+          style_name: planToUse.style_name || storyPlan.style_name,
+          image_size: planToUse.image_size || imageSize,
           createdAt: new Date().toISOString()
         };
 
@@ -215,10 +223,22 @@ export function useStoryGeneration({
     setResearchCollapsed(true);
 
     try {
-      // Ensure image_size is included
+      // Apply current selectedStyle if available, otherwise use research's aesthetic
+      const currentAesthetic = selectedStyle ? {
+        art_style: selectedStyle.art_style,
+        color_palette: selectedStyle.color_palette,
+        lighting: selectedStyle.lighting,
+        texture: selectedStyle.texture,
+        typography_style: selectedStyle.typography_style,
+        background_style: selectedStyle.background_style
+      } : research.aesthetic;
+
+      // Ensure image_size is included and use current aesthetic
       const planWithSize = {
         ...research,
-        image_size: research.image_size || imageSize
+        aesthetic: currentAesthetic,
+        style_name: selectedStyle?.name || research.style_name,
+        image_size: imageSize || research.image_size || 'story'
       };
 
       const response = await fetch('http://localhost:8000/generate_from_plan', {
@@ -245,8 +265,8 @@ export function useStoryGeneration({
         slides: research.slides,
         caption: research.caption,
         hashtags: research.hashtags,
-        aesthetic: research.aesthetic,
-        style_name: research.style_name,
+        aesthetic: currentAesthetic,
+        style_name: selectedStyle?.name || research.style_name,
         image_size: research.image_size || imageSize,
         createdAt: new Date().toISOString()
       };
@@ -277,6 +297,28 @@ export function useStoryGeneration({
     const updatedSlides = [...storyPlan.slides];
     updatedSlides[slideIndex] = { ...updatedSlides[slideIndex], [field]: value };
     setStoryPlan({ ...storyPlan, slides: updatedSlides });
+  };
+
+  const handleDeleteSlide = (slideIndex) => {
+    if (!storyPlan || storyPlan.slides.length <= 1) return;
+    const updatedSlides = storyPlan.slides.filter((_, idx) => idx !== slideIndex);
+    // Renumber slides
+    updatedSlides.forEach((slide, idx) => {
+      slide.slide_number = idx + 1;
+    });
+    setStoryPlan({ ...storyPlan, slides: updatedSlides });
+  };
+
+  const handleAddSlide = () => {
+    if (!storyPlan || storyPlan.slides.length >= 10) return;
+    const newSlideNumber = storyPlan.slides.length + 1;
+    const newSlide = {
+      slide_number: newSlideNumber,
+      title: 'New Scene',
+      key_fact: 'Add your fact here...',
+      visual_description: 'Describe the visual scene...'
+    };
+    setStoryPlan({ ...storyPlan, slides: [...storyPlan.slides, newSlide] });
   };
 
   const handleEditCaption = (value) => {
@@ -330,6 +372,8 @@ export function useStoryGeneration({
     handleRegenerateImages,
     handleEditAesthetic,
     handleEditSlide,
+    handleDeleteSlide,
+    handleAddSlide,
     handleEditCaption,
     handleCancel,
     updatePlanStyle

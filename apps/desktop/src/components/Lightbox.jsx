@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export function Lightbox({
   selectedImage,
   setSelectedImage,
@@ -8,6 +10,8 @@ export function Lightbox({
   topic,
   onDownloadImage
 }) {
+  const [copied, setCopied] = useState(false);
+
   if (!selectedImage) return null;
 
   const images = selectedImage.board?.images || generatedImages;
@@ -36,7 +40,8 @@ export function Lightbox({
       ? `${caption}\n\n${hashtags?.map(t => '#' + t).join(' ') || ''}`
       : '';
     navigator.clipboard.writeText(text);
-    alert('Copied!');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const slideTitle = selectedImage.board?.slides?.[selectedImage.idx]?.title
@@ -95,8 +100,8 @@ export function Lightbox({
           )}
 
           <div className="lightbox-actions">
-            <button className="overlay-btn copy-btn" onClick={handleCopyCaption}>
-              Copy Text
+            <button className={`overlay-btn copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopyCaption}>
+              {copied ? 'Copied!' : 'Copy Text'}
             </button>
             <button
               className="overlay-btn"

@@ -13,7 +13,7 @@ import {
 } from '../components';
 import { useLocalStorage, useStoryGeneration, useBoards } from '../hooks';
 
-function Create() {
+function Create({ openResearchTopic, onResearchOpened }) {
     // Form state
     const [topic, setTopic] = useState('');
     const [numSlides, setNumSlides] = useState(5);
@@ -37,8 +37,10 @@ function Create() {
         savedImageBoards,
         loading: boardsLoading,
         addResearch,
+        updateResearch,
         deleteResearch,
         addImageBoard,
+        updateImageBoard,
         deleteImageBoard,
     } = useBoards();
 
@@ -61,6 +63,24 @@ function Create() {
         };
         loadBrands();
     }, []);
+
+    // Handle opening a specific research from wiki-link
+    useEffect(() => {
+        if (openResearchTopic && savedResearch.length > 0) {
+            // Find matching research by topic
+            const matchingResearch = savedResearch.find(
+                r => r.topic?.toLowerCase() === openResearchTopic.toLowerCase()
+            );
+            if (matchingResearch) {
+                setActiveTab('research');
+                setSelectedResearchBoard(matchingResearch);
+            }
+            // Clear the trigger
+            if (onResearchOpened) {
+                onResearchOpened();
+            }
+        }
+    }, [openResearchTopic, savedResearch, onResearchOpened]);
 
     // Story generation hook
     const {
@@ -85,6 +105,8 @@ function Create() {
         handleRegenerateImages,
         handleEditAesthetic,
         handleEditSlide,
+        handleDeleteSlide,
+        handleAddSlide,
         handleEditCaption,
         handleCancel,
         updatePlanStyle
@@ -117,36 +139,79 @@ function Create() {
         try {
             const response = await fetch(imageUrl);
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `slide_${index + 1}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            const arrayBuffer = await blob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // Try Tauri's native save dialog
+            if (window.__TAURI__) {
+                const { save } = await import('@tauri-apps/api/dialog');
+                const { writeBinaryFile } = await import('@tauri-apps/api/fs');
+
+                const filePath = await save({
+                    defaultPath: `slide_${index + 1}.png`,
+                    filters: [{ name: 'Images', extensions: ['png'] }]
+                });
+
+                if (filePath) {
+                    await writeBinaryFile(filePath, uint8Array);
+                }
+            } else {
+                // Fallback for browser
+                saveAs(blob, `slide_${index + 1}.png`);
+            }
         } catch (err) {
             console.error('Download failed:', err);
+            // Ultimate fallback: open in new tab
+            window.open(imageUrl, '_blank');
         }
     };
 
     const handleDownloadAll = async (images, topicName = 'story') => {
-        const zip = new JSZip();
-        const folder = zip.folder('images');
-
-        for (let i = 0; i < images.length; i++) {
-            try {
-                const response = await fetch(images[i]);
-                const blob = await response.blob();
-                folder.file(`slide_${i + 1}.png`, blob);
-            } catch (err) {
-                console.error(`Failed to add image ${i + 1} to zip:`, err);
-            }
-        }
-
-        const content = await zip.generateAsync({ type: 'blob' });
         const safeName = topicName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        saveAs(content, `${safeName}_images.zip`);
+
+        try {
+            // If only 1 image, download directly
+            if (images.length === 1) {
+                await handleDownloadImage(images[0], 0);
+                return;
+            }
+
+            // Multiple images - create zip
+            const zip = new JSZip();
+            const folder = zip.folder('images');
+
+            for (let i = 0; i < images.length; i++) {
+                try {
+                    const response = await fetch(images[i]);
+                    const blob = await response.blob();
+                    folder.file(`slide_${i + 1}.png`, blob);
+                } catch (err) {
+                    console.error(`Failed to add image ${i + 1} to zip:`, err);
+                }
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+
+            // Try Tauri's native save dialog
+            if (window.__TAURI__) {
+                const { save } = await import('@tauri-apps/api/dialog');
+                const { writeBinaryFile } = await import('@tauri-apps/api/fs');
+
+                const filePath = await save({
+                    defaultPath: `${safeName}_images.zip`,
+                    filters: [{ name: 'ZIP Archive', extensions: ['zip'] }]
+                });
+
+                if (filePath) {
+                    const arrayBuffer = await content.arrayBuffer();
+                    await writeBinaryFile(filePath, new Uint8Array(arrayBuffer));
+                }
+            } else {
+                saveAs(content, `${safeName}_images.zip`);
+            }
+        } catch (err) {
+            console.error('Download all failed:', err);
+        }
     };
 
     // Delete handlers
@@ -158,8 +223,38 @@ function Create() {
         deleteImageBoard(boardId);
     };
 
+    // Delete a single image from a board
+    const handleDeleteSingleImage = async (boardId, imageIndex) => {
+        const board = savedImageBoards.find(b => b.id === boardId);
+        if (!board) return;
+
+        const newImages = [...board.images];
+        newImages.splice(imageIndex, 1);
+
+        // If no images left, delete the whole board
+        if (newImages.length === 0) {
+            deleteImageBoard(boardId);
+            setSelectedBoard(null);
+            return;
+        }
+
+        // Update the board with remaining images
+        const updatedBoard = {
+            ...board,
+            images: newImages,
+            updatedAt: new Date().toISOString()
+        };
+
+        await updateImageBoard(updatedBoard);
+        setSelectedBoard(updatedBoard);
+    };
+
+    // Store source research for back navigation
+    const [sourceResearch, setSourceResearch] = useState(null);
+
     // Open review mode for regeneration from research board
     const handleReviewForRegenerate = (research) => {
+        setSourceResearch(research); // Store for back navigation
         setSelectedResearchBoard(null);
         // Format research as storyPlan to trigger ReviewMode
         // Use selectedStyle from sidebar if available, otherwise use research's aesthetic
@@ -171,16 +266,110 @@ function Create() {
             hashtags: research.hashtags,
             sources: research.sources,
             image_size: research.image_size || imageSize,
-            isFromResearch: true  // Flag to know this came from saved research
+            isFromResearch: true,  // Flag to know this came from saved research
+            sourceResearchId: research.id  // Store the source ID
         });
     };
 
+    // Go back from ReviewMode to Research detail
+    const handleBackFromReview = () => {
+        if (sourceResearch) {
+            setSelectedResearchBoard(sourceResearch);
+            setSourceResearch(null);
+        }
+        setStoryPlan(null);
+    };
+
     // Confirm plan and set board
-    const handleConfirmAndSetBoard = async () => {
-        const newBoard = await handleConfirmPlan();
+    const handleConfirmAndSetBoard = async (filteredPlan = null) => {
+        const newBoard = await handleConfirmPlan(filteredPlan);
         if (newBoard) {
             setSelectedBoard(newBoard);
             setActiveTab('images');
+        }
+    };
+
+    // Save just the research without generating images
+    const handleSaveResearchOnly = () => {
+        if (!storyPlan) return;
+
+        const researchBoard = {
+            id: Date.now(),
+            topic: storyPlan.topic,
+            aesthetic: storyPlan.aesthetic,
+            slides: storyPlan.slides,
+            sources: storyPlan.sources || [],
+            caption: storyPlan.caption,
+            hashtags: storyPlan.hashtags,
+            image_size: imageSize || storyPlan.image_size || 'story',
+            createdAt: new Date().toISOString()
+        };
+
+        addResearch(researchBoard);
+        setStoryPlan(null); // Clear plan to go back to boards view
+        setActiveTab('research'); // Switch to research tab
+    };
+
+    // Add more slides to existing research
+    const handleAddMoreSlides = async (research, additionalCount) => {
+        if (!research || additionalCount <= 0) return;
+
+        try {
+            const response = await fetch('http://localhost:8000/add_slides', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    topic: research.topic,
+                    existing_slides: research.slides,
+                    additional_count: additionalCount,
+                    aesthetic: selectedStyle || research.aesthetic
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to add slides');
+
+            const data = await response.json();
+
+            // Update the research board with new slides
+            const updatedResearch = {
+                ...research,
+                slides: data.slides,
+                sources: [...(research.sources || []), ...(data.new_sources || [])]
+            };
+
+            // Update in backend
+            await fetch(`http://localhost:8000/boards/research/${research.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedResearch),
+            });
+
+            // Update local state
+            updateResearch(updatedResearch);
+            setSelectedResearchBoard(updatedResearch);
+
+        } catch (err) {
+            console.error('Failed to add slides:', err);
+            alert('Failed to add more slides. Please try again.');
+        }
+    };
+
+    // Update research (edit slides, delete slides, add manual slides)
+    const handleUpdateResearch = async (updatedResearch) => {
+        if (!updatedResearch) return;
+
+        try {
+            // Update in backend
+            await fetch(`http://localhost:8000/boards/research/${updatedResearch.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedResearch),
+            });
+
+            // Update local state
+            updateResearch(updatedResearch);
+        } catch (err) {
+            console.error('Failed to update research:', err);
         }
     };
 
@@ -193,9 +382,10 @@ function Create() {
                     storyPlan={storyPlan}
                     selectedStyle={selectedStyle}
                     onEditAesthetic={handleEditAesthetic}
-                    onEditSlide={handleEditSlide}
                     onEditCaption={handleEditCaption}
                     onConfirmPlan={handleConfirmAndSetBoard}
+                    onSaveResearch={handleSaveResearchOnly}
+                    onBack={handleBackFromReview}
                 />
             );
         }
@@ -243,6 +433,9 @@ function Create() {
                 onReviewForRegenerate={handleReviewForRegenerate}
                 onDeleteResearch={handleDeleteResearch}
                 onDeleteImages={handleDeleteImages}
+                onDeleteSingleImage={handleDeleteSingleImage}
+                onAddMoreSlides={handleAddMoreSlides}
+                onUpdateResearch={handleUpdateResearch}
             />
         );
     };
