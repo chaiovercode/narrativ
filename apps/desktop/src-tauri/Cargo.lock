@@ -1849,6 +1849,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "narrativ"
+version = "1.1.0"
+dependencies = [
+ "aes-gcm",
+ "base64 0.21.7",
+ "chrono",
+ "dirs",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tokio",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2620,23 +2637,6 @@ dependencies = [
  "wasm-streams",
  "web-sys",
  "winreg 0.50.0",
-]
-
-[[package]]
-name = "revelio"
-version = "1.1.0"
-dependencies = [
- "aes-gcm",
- "base64 0.21.7",
- "chrono",
- "dirs",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tokio",
 ]
 
 [[package]]

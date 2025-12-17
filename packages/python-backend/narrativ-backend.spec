@@ -1,37 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
 
-datas = [('data', 'data')]
-binaries = []
-hiddenimports = ['google.generativeai', 'PIL', 'fal_client']
-tmp_ret = collect_all('google.generativeai')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('google.ai.generativelanguage')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-
-# Exclude unnecessary modules to reduce size
-excludes = [
-    'tkinter', '_tkinter', 'tcl', 'tk',
-    'matplotlib', 'scipy', 'pandas', 'numpy.testing',
-    'pytest', 'unittest', 'test', 'tests',
-    'IPython', 'jupyter', 'notebook',
-    'setuptools', 'pkg_resources',
-    'pydoc', 'doctest',
-    'xml.sax.expatreader',
-]
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hiddenimports,
+    binaries=[],
+    datas=[('services', 'services'), ('config.py', '.'), ('data', 'data')],
+    hiddenimports=['uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto', 'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan', 'uvicorn.lifespan.on', 'uvicorn.lifespan.off', 'google.genai', 'PIL', 'PIL.Image', 'feedparser', 'pydantic', 'multipart', 'dotenv', 'services', 'services.research', 'services.image_gen', 'services.styles', 'services.brand', 'services.boards', 'services.notes', 'services.trending', 'services.rss'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=excludes,
+    excludes=['tkinter', 'matplotlib', 'scipy', 'pandas'],
     noarchive=False,
-    optimize=2,
+    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -44,7 +25,7 @@ exe = EXE(
     name='narrativ-backend',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
+    strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
