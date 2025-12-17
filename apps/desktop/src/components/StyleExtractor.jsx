@@ -141,6 +141,7 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
                 placeholder="Style name..."
                 value={styleName}
                 onChange={(e) => setStyleName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
               />
 
               <div className="extracted-style-details">
@@ -168,10 +169,10 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
               </div>
 
               <div className="extractor-actions">
-                <button className="extractor-btn cancel" onClick={handleCancel}>
+                <button type="button" className="extractor-btn cancel" onClick={handleCancel}>
                   Cancel
                 </button>
-                <button className="extractor-btn save" onClick={handleSaveStyle}>
+                <button type="button" className="extractor-btn save" onClick={handleSaveStyle}>
                   Save Style
                 </button>
               </div>
@@ -180,7 +181,7 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
 
           {!extractedStyle && !isExtracting && (
             <div className="extractor-actions">
-              <button className="extractor-btn cancel" onClick={handleCancel}>
+              <button type="button" className="extractor-btn cancel" onClick={handleCancel}>
                 Cancel
               </button>
             </div>
