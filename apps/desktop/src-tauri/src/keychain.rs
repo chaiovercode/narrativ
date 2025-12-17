@@ -8,6 +8,21 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::io::Write;
+
+fn debug_log(msg: &str) {
+    if let Some(home) = dirs::home_dir() {
+        let log_path = home.join("narrativ_debug.log");
+        if let Ok(mut file) = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+        {
+            let _ = writeln!(file, "{}", msg);
+        }
+    }
+    eprintln!("{}", msg);
+}
 
 const NONCE_SIZE: usize = 12;
 const APP_SALT: &[u8] = b"narrativ_secrets_v2_stable";
@@ -75,6 +90,7 @@ fn get_secrets_path() -> PathBuf {
         let _ = fs::create_dir_all(&path);
     }
     path.push("secrets.enc");
+    debug_log(&format!("[keychain] Secrets path: {:?}, exists: {}", path, path.exists()));
     path
 }
 
@@ -82,14 +98,26 @@ fn get_secrets_path() -> PathBuf {
 fn read_secrets() -> HashMap<String, String> {
     let path = get_secrets_path();
     if path.exists() {
+        debug_log(&format!("[keychain] Reading secrets from {:?}", path));
         if let Ok(encrypted) = fs::read_to_string(&path) {
-            if let Ok(decrypted) = decrypt(&encrypted) {
-                return serde_json::from_str(&decrypted).unwrap_or_default();
-            } else {
-                // If decryption fails, the key derivation changed - clear old secrets
-                println!("Warning: Could not decrypt secrets file, may need to re-enter API keys");
+            debug_log(&format!("[keychain] Read {} bytes of encrypted data", encrypted.len()));
+            match decrypt(&encrypted) {
+                Ok(decrypted) => {
+                    let secrets: HashMap<String, String> = serde_json::from_str(&decrypted).unwrap_or_default();
+                    debug_log(&format!("[keychain] Decrypted successfully, found {} keys: {:?}",
+                        secrets.len(),
+                        secrets.keys().collect::<Vec<_>>()));
+                    return secrets;
+                }
+                Err(e) => {
+                    debug_log(&format!("[keychain] Decryption failed: {}", e));
+                }
             }
+        } else {
+            debug_log("[keychain] Failed to read secrets file");
         }
+    } else {
+        debug_log("[keychain] Secrets file does not exist");
     }
     HashMap::new()
 }

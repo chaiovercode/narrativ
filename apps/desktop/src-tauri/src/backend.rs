@@ -27,6 +27,12 @@ impl BackendManager {
         if let Ok(exe_path) = std::env::current_exe() {
             // macOS app bundle: .app/Contents/MacOS/app -> .app/Contents/Resources/
             if let Some(parent) = exe_path.parent() {
+                // Tauri bundles to Resources/resources/ subfolder
+                let resources_nested = parent.join("../Resources/resources/narrativ-backend");
+                if resources_nested.exists() {
+                    return Some(resources_nested);
+                }
+                // Fallback to direct Resources path
                 let resources = parent.join("../Resources/narrativ-backend");
                 if resources.exists() {
                     return Some(resources);
@@ -67,6 +73,12 @@ impl BackendManager {
             .unwrap_or_default();
         let fal_key = keychain::retrieve_api_key("fal_api_key")?
             .unwrap_or_default();
+
+        // Debug: log key status (not the actual keys)
+        println!("API Keys status - Google: {}, Tavily: {}, Fal: {}",
+            if google_key.is_empty() { "MISSING" } else { "SET" },
+            if tavily_key.is_empty() { "MISSING" } else { "SET" },
+            if fal_key.is_empty() { "MISSING" } else { "SET" });
 
         // Try bundled executable first, then fall back to Python for development
         let child = if let Some(bundled_path) = Self::find_bundled_backend() {

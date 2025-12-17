@@ -198,7 +198,7 @@ No other text or explanation.
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         extracted = response.text.strip()
@@ -527,7 +527,7 @@ LANGUAGE: English only. Generate exactly {num_slides} slides now."""
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         text = clean_json_response(response.text)
@@ -704,7 +704,7 @@ Return ONLY valid JSON array with exactly {additional_count} slides:
     new_slides = []
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         text = clean_json_response(response.text)

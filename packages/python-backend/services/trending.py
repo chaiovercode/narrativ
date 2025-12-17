@@ -162,7 +162,7 @@ Return as JSON array of strings only. No markdown."""
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         text = clean_json_response(response.text)

@@ -287,7 +287,7 @@ Example output:
 
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-2.0-flash',
             contents=[
                 {
                     "parts": [
