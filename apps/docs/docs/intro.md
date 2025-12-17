@@ -3,11 +3,11 @@ sidebar_position: 1
 slug: /
 ---
 
-# Welcome to Revelio
+# Welcome to Narrativ
 
-Revelio is an AI-powered desktop application for creating beautiful, well-researched stories and posts for social media. Think of it as your personal content creation studio - powered by cutting-edge AI.
+Narrativ is an AI-powered desktop application for creating beautiful, well-researched stories and posts for social media. Think of it as your personal content creation studio - powered by cutting-edge AI.
 
-## What Can You Do With Revelio?
+## What Can You Do With Narrativ?
 
 - **Create Visual Stories**: Generate Instagram/WhatsApp story slides with AI-generated images
 - **Research Any Topic**: Deep research capabilities to ensure accuracy and depth
@@ -15,7 +15,7 @@ Revelio is an AI-powered desktop application for creating beautiful, well-resear
 - **Brand Your Content**: Add your logo or text watermark to all generated images
 - **Secure & Private**: Your API keys are encrypted in macOS Keychain
 
-## Why Revelio?
+## Why Narrativ?
 
 Unlike online AI tools:
 
@@ -26,7 +26,7 @@ Unlike online AI tools:
 
 ## Quick Start
 
-1. [Install Revelio](/docs/getting-started/installation)
+1. [Install Narrativ](/docs/getting-started/installation)
 2. [Set up your API keys](/docs/getting-started/api-keys)
 3. [Create your first story](/docs/getting-started/first-story)
 

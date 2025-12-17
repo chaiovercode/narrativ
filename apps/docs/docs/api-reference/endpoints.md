@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # API Endpoints
 
-Revelio's backend exposes a REST API for all operations. This is primarily used by the frontend but can be accessed directly for automation or integration.
+Narrativ's backend exposes a REST API for all operations. This is primarily used by the frontend but can be accessed directly for automation or integration.
 
 ## Base URL
 
@@ -12,7 +12,7 @@ Revelio's backend exposes a REST API for all operations. This is primarily used 
 http://localhost:8000
 ```
 
-The port may vary based on configuration (see `REVELIO_PORT` environment variable).
+The port may vary based on configuration (see `NARRATIV_PORT` environment variable).
 
 ## Health Check
 
@@ -24,7 +24,7 @@ Check if the API is running.
 ```json
 {
   "status": "ok",
-  "service": "Revelio API"
+  "service": "Narrativ API"
 }
 ```
 

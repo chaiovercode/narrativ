@@ -1,14 +1,14 @@
 {
-  "name": "revelio",
+  "name": "narrativ",
   "version": "1.0.0",
   "private": true,
   "description": "AI-powered social media story creator - desktop app",
   "scripts": {
-    "dev": "pnpm --filter @revelio/desktop dev",
-    "build": "pnpm --filter @revelio/desktop build",
-    "tauri": "pnpm --filter @revelio/desktop tauri",
-    "docs:dev": "pnpm --filter @revelio/docs start",
-    "docs:build": "pnpm --filter @revelio/docs build"
+    "dev": "pnpm --filter @narrativ/desktop dev",
+    "build": "pnpm --filter @narrativ/desktop build",
+    "tauri": "pnpm --filter @narrativ/desktop tauri",
+    "docs:dev": "pnpm --filter @narrativ/docs start",
+    "docs:build": "pnpm --filter @narrativ/docs build"
   },
   "keywords": ["ai", "story-generator", "social-media", "tauri", "desktop-app"],
   "author": "chaiovercode",

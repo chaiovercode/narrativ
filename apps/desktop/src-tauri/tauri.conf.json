@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "Revelio",
+    "productName": "Narrativ",
     "version": "1.0.2"
   },
   "tauri": {
@@ -49,7 +49,7 @@
     },
     "bundle": {
       "active": true,
-      "identifier": "com.revelio.app",
+      "identifier": "com.narrativ.app",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -65,14 +65,14 @@
         "providerShortName": null,
         "entitlements": null
       },
-      "resources": ["resources/revelio-backend"]
+      "resources": ["resources/narrativ-backend"]
     },
     "security": {
       "csp": null
     },
     "windows": [
       {
-        "title": "Revelio",
+        "title": "Narrativ",
         "width": 1400,
         "height": 900,
         "minWidth": 1200,

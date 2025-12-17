@@ -27,7 +27,7 @@ impl BackendManager {
         if let Ok(exe_path) = std::env::current_exe() {
             // macOS app bundle: .app/Contents/MacOS/app -> .app/Contents/Resources/
             if let Some(parent) = exe_path.parent() {
-                let resources = parent.join("../Resources/revelio-backend");
+                let resources = parent.join("../Resources/narrativ-backend");
                 if resources.exists() {
                     return Some(resources);
                 }
@@ -36,9 +36,9 @@ impl BackendManager {
 
         // Development: look in src-tauri/resources
         let dev_paths = vec![
-            PathBuf::from("resources/revelio-backend"),
-            PathBuf::from("src-tauri/resources/revelio-backend"),
-            PathBuf::from("../resources/revelio-backend"),
+            PathBuf::from("resources/narrativ-backend"),
+            PathBuf::from("src-tauri/resources/narrativ-backend"),
+            PathBuf::from("../resources/narrativ-backend"),
         ];
 
         for path in dev_paths {
@@ -72,7 +72,7 @@ impl BackendManager {
         let child = if let Some(bundled_path) = Self::find_bundled_backend() {
             println!("Using bundled backend: {:?}", bundled_path);
             Command::new(&bundled_path)
-                .env("REVELIO_PORT", self.port.to_string())
+                .env("NARRATIV_PORT", self.port.to_string())
                 .env("GOOGLE_API_KEY", &google_key)
                 .env("TAVILY_API_KEY", &tavily_key)
                 .env("FAL_API_KEY", &fal_key)
@@ -86,7 +86,7 @@ impl BackendManager {
             let main_py = format!("{}/main.py", python_backend_path);
             Command::new("python3")
                 .arg(&main_py)
-                .env("REVELIO_PORT", self.port.to_string())
+                .env("NARRATIV_PORT", self.port.to_string())
                 .env("GOOGLE_API_KEY", &google_key)
                 .env("TAVILY_API_KEY", &tavily_key)
                 .env("FAL_API_KEY", &fal_key)

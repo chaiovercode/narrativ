@@ -4,13 +4,13 @@ sidebar_position: 1
 
 # Story Creation
 
-Learn how to create compelling visual stories with Revelio.
+Learn how to create compelling visual stories with Narrativ.
 
 ## Two Creation Modes
 
 ### Topic Mode
 
-Enter a topic and let Revelio research it for you:
+Enter a topic and let Narrativ research it for you:
 
 1. **Research Phase**: AI searches the web for current, accurate information
 2. **Fact Extraction**: Key facts are extracted and organized

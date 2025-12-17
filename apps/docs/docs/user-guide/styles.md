@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Visual Styles
 
-Revelio offers multiple ways to style your visual content.
+Narrativ offers multiple ways to style your visual content.
 
 ## Predefined Styles
 

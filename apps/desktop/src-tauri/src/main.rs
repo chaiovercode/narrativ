@@ -62,7 +62,7 @@ fn main() {
             commands::remove_vault_from_history,
         ])
         .setup(|app| {
-            println!("Revelio is starting...");
+            println!("Narrativ is starting...");
 
             // Start backend - will use bundled executable if available, Python fallback for dev
             let backend_path = find_python_backend_for_dev()
@@ -82,7 +82,7 @@ fn main() {
         .on_window_event(|event| {
             // Handle window close to cleanup backend
             if let tauri::WindowEvent::CloseRequested { .. } = event.event() {
-                println!("Revelio is closing, cleaning up...");
+                println!("Narrativ is closing, cleaning up...");
                 // Backend will be cleaned up via BackendManager's Drop impl
             }
         })

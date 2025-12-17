@@ -10,7 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 
 const NONCE_SIZE: usize = 12;
-const APP_SALT: &[u8] = b"revelio_secrets_v2_stable";
+const APP_SALT: &[u8] = b"narrativ_secrets_v2_stable";
 
 /// Derive encryption key from user's home directory path (consistent across builds)
 fn get_encryption_key() -> [u8; 32] {
@@ -70,7 +70,7 @@ fn decrypt(encrypted: &str) -> Result<String, String> {
 /// Get the secrets file path in the app data directory
 fn get_secrets_path() -> PathBuf {
     let mut path = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push("com.revelio.app");
+    path.push("com.narrativ.app");
     if !path.exists() {
         let _ = fs::create_dir_all(&path);
     }

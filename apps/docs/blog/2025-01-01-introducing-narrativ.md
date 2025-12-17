@@ -1,15 +1,15 @@
 ---
-slug: introducing-revelio
-title: Introducing Revelio
+slug: introducing-narrativ
+title: Introducing Narrativ
 authors: [chaiovercode]
 tags: [announcement, release]
 ---
 
-We're excited to introduce **Revelio** - your AI-powered desktop companion for creating stunning social media stories.
+We're excited to introduce **Narrativ** - your AI-powered desktop companion for creating stunning social media stories.
 
 <!-- truncate -->
 
-## Why Revelio?
+## Why Narrativ?
 
 Creating engaging social media content is time-consuming. You need to:
 - Research your topic thoroughly
@@ -17,13 +17,13 @@ Creating engaging social media content is time-consuming. You need to:
 - Maintain consistent branding
 - Format everything for different platforms
 
-Revelio automates all of this while keeping you in control.
+Narrativ automates all of this while keeping you in control.
 
 ## Key Features
 
 ### AI-Powered Research
 
-Enter a topic, and Revelio:
+Enter a topic, and Narrativ:
 - Searches the web for current information
 - Extracts key facts and insights
 - Organizes content into a narrative flow
@@ -54,7 +54,7 @@ Unlike online AI tools:
 
 ## Getting Started
 
-1. [Download Revelio](/docs/getting-started/installation)
+1. [Download Narrativ](/docs/getting-started/installation)
 2. [Set up your API keys](/docs/getting-started/api-keys)
 3. [Create your first story](/docs/getting-started/first-story)
 
@@ -68,7 +68,7 @@ We're actively working on:
 
 ## Open Source
 
-Revelio is open source and we welcome contributions! Check out our [GitHub repository](https://github.com/chaiovercode/revelio) and [contributing guide](/docs/development/contributing).
+Narrativ is open source and we welcome contributions! Check out our [GitHub repository](https://github.com/chaiovercode/narrativ) and [contributing guide](/docs/development/contributing).
 
 ---
 

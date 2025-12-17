@@ -1,12 +1,12 @@
 #!/bin/bash
-# Build Revelio Backend as standalone executable
+# Build Narrativ Backend as standalone executable
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== Building Revelio Backend ==="
+echo "=== Building Narrativ Backend ==="
 
 # Clean previous builds
 rm -rf build dist
@@ -18,7 +18,7 @@ pip3 install pyinstaller --quiet
 # Build single executable
 pyinstaller \
     --onefile \
-    --name revelio-backend \
+    --name narrativ-backend \
     --hidden-import=uvicorn.logging \
     --hidden-import=uvicorn.loops \
     --hidden-import=uvicorn.loops.auto \
@@ -59,5 +59,5 @@ pyinstaller \
 
 echo ""
 echo "=== Build Complete ==="
-echo "Executable: dist/revelio-backend"
-echo "Size: $(du -h dist/revelio-backend | cut -f1)"
+echo "Executable: dist/narrativ-backend"
+echo "Size: $(du -h dist/narrativ-backend | cut -f1)"

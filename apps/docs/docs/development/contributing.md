@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Contributing
 
-Help make Revelio better! Here's how to contribute.
+Help make Narrativ better! Here's how to contribute.
 
 ## Development Setup
 
@@ -19,8 +19,8 @@ Help make Revelio better! Here's how to contribute.
 
 ```bash
 # Clone the repository
-git clone https://github.com/chaiovercode/revelio.git
-cd revelio
+git clone https://github.com/chaiovercode/narrativ.git
+cd narrativ
 
 # Install Node.js dependencies
 pnpm install
@@ -52,7 +52,7 @@ cd apps/docs && pnpm start
 ## Project Structure
 
 ```
-revelio/
+narrativ/
 ├── apps/
 │   ├── desktop/              # Tauri + React app
 │   │   ├── src/              # React frontend
@@ -91,7 +91,7 @@ revelio/
 
 ```bash
 # Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/revelio.git
+git clone https://github.com/YOUR_USERNAME/narrativ.git
 git checkout -b feature/your-feature-name
 ```
 

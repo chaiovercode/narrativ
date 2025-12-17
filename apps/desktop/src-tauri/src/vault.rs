@@ -2,8 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
-const REVELIO_CONFIG_DIR: &str = ".revelio";
-const REVELIO_CONFIG_FILE: &str = "config.json";
+const NARRATIV_CONFIG_DIR: &str = ".narrativ";
+const NARRATIV_CONFIG_FILE: &str = "config.json";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VaultConfig {
@@ -43,7 +43,7 @@ impl Vault {
             created_at: chrono::Utc::now().to_rfc3339(),
         };
 
-        let config_path = vault.config_dir().join(REVELIO_CONFIG_FILE);
+        let config_path = vault.config_dir().join(NARRATIV_CONFIG_FILE);
         let config_json = serde_json::to_string_pretty(&config)
             .map_err(|e| format!("Failed to serialize config: {}", e))?;
         fs::write(&config_path, config_json)
@@ -56,20 +56,20 @@ impl Vault {
     #[allow(dead_code)]
     pub fn open(path: &Path) -> Result<Self, String> {
         if !Self::is_valid_vault(path) {
-            return Err("Not a valid Revelio vault".to_string());
+            return Err("Not a valid Narrativ vault".to_string());
         }
         Ok(Self { path: path.to_path_buf() })
     }
 
-    /// Check if a path is a valid Revelio vault
+    /// Check if a path is a valid Narrativ vault
     pub fn is_valid_vault(path: &Path) -> bool {
-        let config_path = path.join(REVELIO_CONFIG_DIR).join(REVELIO_CONFIG_FILE);
+        let config_path = path.join(NARRATIV_CONFIG_DIR).join(NARRATIV_CONFIG_FILE);
         config_path.exists()
     }
 
     /// Get the hidden config directory
     pub fn config_dir(&self) -> PathBuf {
-        self.path.join(REVELIO_CONFIG_DIR)
+        self.path.join(NARRATIV_CONFIG_DIR)
     }
 
     /// Get the research directory
@@ -90,7 +90,7 @@ impl Vault {
 
 /// Get the app settings file path
 pub fn get_settings_path() -> Option<PathBuf> {
-    dirs::data_dir().map(|p| p.join("com.revelio.app").join("settings.json"))
+    dirs::data_dir().map(|p| p.join("com.narrativ.app").join("settings.json"))
 }
 
 /// Load the vault path from app settings

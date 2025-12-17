@@ -64,7 +64,7 @@ Deletion is permanent. Downloaded copies are not affected.
 Generated stories are stored in:
 
 ```
-~/Library/Application Support/com.revelio.app/generated/
+~/Library/Application Support/com.narrativ.app/generated/
 ```
 
 Each story has its own folder named:

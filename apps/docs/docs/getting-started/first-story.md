@@ -4,11 +4,11 @@ sidebar_position: 3
 
 # Create Your First Story
 
-Let's create your first AI-generated story in Revelio!
+Let's create your first AI-generated story in Narrativ!
 
 ## Step 1: Open the Create Page
 
-1. Launch Revelio
+1. Launch Narrativ
 2. Click **Create** in the navigation bar
 
 ## Step 2: Enter a Topic
@@ -22,13 +22,13 @@ You have two options:
    - Example: "How AI is changing healthcare"
    - Example: "Top 5 travel destinations in Japan"
 
-2. Revelio will research the topic and gather facts
+2. Narrativ will research the topic and gather facts
 
 ### Option B: Paste Your Own Content
 
 1. Click **Paste Mode** toggle
 2. Paste your own text content (article, notes, etc.)
-3. Revelio will extract key points and create slides
+3. Narrativ will extract key points and create slides
 
 ## Step 3: Configure Your Story
 
@@ -54,7 +54,7 @@ You have two options:
 
 After clicking **Generate**:
 
-1. Revelio researches your topic (if using Topic mode)
+1. Narrativ researches your topic (if using Topic mode)
 2. A **plan** appears showing:
    - Slide titles
    - Key facts for each slide

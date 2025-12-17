@@ -1,4 +1,4 @@
-# Revelio
+# Narrativ
 
 AI-powered desktop application for creating stunning social media stories and posts.
 
@@ -35,7 +35,7 @@ pnpm dev
 ## Project Structure
 
 ```
-revelio/
+narrativ/
 ├── apps/
 │   ├── desktop/          # Tauri + React desktop app
 │   │   ├── src/          # React frontend

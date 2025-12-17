@@ -68,7 +68,7 @@ export function Sidebar({
     if (!topic) {
       return 'Enter a topic to reveal';
     }
-    return 'Revelio';
+    return 'Narrativ';
   };
 
   return (

@@ -1,4 +1,4 @@
-# Revelio Python Backend Dependencies
+# Narrativ Python Backend Dependencies
 
 # Web Framework
 fastapi>=0.109.0

@@ -357,7 +357,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
               <div className="setting-item">
                 <div className="setting-info">
                   <span className="setting-label">Version</span>
-                  <span className="setting-description">Revelio v1.0.0</span>
+                  <span className="setting-description">Narrativ v1.0.0</span>
                 </div>
               </div>
             </div>

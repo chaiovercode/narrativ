@@ -21,7 +21,7 @@ function StatusBar() {
 
       {/* App Title */}
       <div className="title-bar-center" data-tauri-drag-region>
-        <span className="app-title" data-tauri-drag-region>Revelio</span>
+        <span className="app-title" data-tauri-drag-region>Narrativ</span>
       </div>
 
       {/* Version */}

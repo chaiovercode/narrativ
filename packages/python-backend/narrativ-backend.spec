@@ -41,7 +41,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='revelio-backend',
+    name='narrativ-backend',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,

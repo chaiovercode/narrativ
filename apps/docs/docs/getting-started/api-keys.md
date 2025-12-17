@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Setting Up API Keys
 
-Revelio uses AI services that require API keys. Your keys are stored securely in the macOS Keychain and never leave your device.
+Narrativ uses AI services that require API keys. Your keys are stored securely in the macOS Keychain and never leave your device.
 
 ## Required: Google API Key
 
@@ -17,9 +17,9 @@ The Google API key powers both text generation (Gemini) and image generation (Im
 3. Click "Create API Key"
 4. Copy the generated key
 
-### Adding to Revelio
+### Adding to Narrativ
 
-1. Open Revelio
+1. Open Narrativ
 2. Go to **Settings** (via navbar)
 3. In the **API Keys** section, find "Google API Key"
 4. Paste your key and click **Save**
@@ -45,7 +45,7 @@ Tavily provides enhanced research capabilities with deeper, more accurate web se
 - Better fact extraction
 - Faster response times
 
-Without Tavily, Revelio falls back to DuckDuckGo search, which works but may be less comprehensive.
+Without Tavily, Narrativ falls back to DuckDuckGo search, which works but may be less comprehensive.
 
 ## Optional: FAL API Key
 
@@ -68,7 +68,7 @@ FAL.ai provides additional image generation models (Flux) for different visual s
 
 - **Keys are encrypted** using macOS Keychain
 - **Keys never leave your device** - they're passed directly to AI services
-- **No telemetry** - Revelio doesn't track your usage or keys
+- **No telemetry** - Narrativ doesn't track your usage or keys
 - **Environment-based** - Keys are passed to the backend via secure environment variables
 
 ## Troubleshooting
@@ -89,4 +89,4 @@ FAL.ai provides additional image generation models (Flux) for different visual s
 
 - Ensure Python 3.10+ is installed
 - Check Settings > About for backend status
-- Try restarting Revelio
+- Try restarting Narrativ

@@ -128,7 +128,7 @@ pub fn restart_backend(
 #[tauri::command]
 pub fn get_app_data_dir() -> Result<String, String> {
     dirs::data_dir()
-        .map(|p| p.join("com.revelio.app").to_string_lossy().to_string())
+        .map(|p| p.join("com.narrativ.app").to_string_lossy().to_string())
         .ok_or_else(|| "Could not determine app data directory".to_string())
 }
 
@@ -177,7 +177,7 @@ pub fn create_vault(path: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Validate if a path is a valid Revelio vault
+/// Validate if a path is a valid Narrativ vault
 #[tauri::command]
 pub fn validate_vault(path: String) -> bool {
     let vault_path = std::path::Path::new(&path);

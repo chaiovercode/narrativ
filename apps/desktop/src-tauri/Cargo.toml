@@ -1,10 +1,10 @@
 [package]
-name = "revelio"
+name = "narrativ"
 version = "1.1.0"
 description = "AI-powered social media story creator"
 authors = ["chaiovercode"]
 license = "MIT"
-repository = "https://github.com/chaiovercode/revelio"
+repository = "https://github.com/chaiovercode/narrativ"
 edition = "2021"
 
 [build-dependencies]

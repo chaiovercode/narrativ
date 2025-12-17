@@ -137,7 +137,7 @@ function VaultSetup({ onVaultSelected, onClose, canClose = false }) {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Open existing Revelio vault',
+        title: 'Open existing Narrativ vault',
       });
 
       if (selected) {
@@ -149,7 +149,7 @@ function VaultSetup({ onVaultSelected, onClose, canClose = false }) {
           await invoke('add_vault_to_history', { name, path: selected });
           onVaultSelected(selected, name);
         } else {
-          setError('This folder is not a valid Revelio vault.');
+          setError('This folder is not a valid Narrativ vault.');
         }
       }
     } catch (err) {
@@ -167,7 +167,7 @@ function VaultSetup({ onVaultSelected, onClose, canClose = false }) {
       <div className="vault-setup">
         <div className="vault-setup-content compact">
           <div className="vault-logo">
-            <span className="vault-logo-icon">R</span>
+            <span className="vault-logo-icon">N</span>
           </div>
 
           <h1 className="vault-title">Create vault</h1>
@@ -218,7 +218,7 @@ function VaultSetup({ onVaultSelected, onClose, canClose = false }) {
       <div className="vault-setup">
         <div className="vault-setup-content compact">
           <div className="vault-logo">
-            <span className="vault-logo-icon">R</span>
+            <span className="vault-logo-icon">N</span>
           </div>
 
           <h1 className="vault-title">Name your vault</h1>
@@ -297,16 +297,16 @@ function VaultSetup({ onVaultSelected, onClose, canClose = false }) {
         {/* Right side - logo and actions */}
         <div className="vault-actions-section">
           <div className="vault-logo">
-            <span className="vault-logo-icon">R</span>
+            <span className="vault-logo-icon">N</span>
           </div>
-          <h1 className="vault-brand">Revelio</h1>
+          <h1 className="vault-brand">Narrativ</h1>
           <span className="vault-version">Version 1.0.0</span>
 
           <div className="vault-action-buttons">
             <div className="vault-action-item" onClick={handleCreateVault}>
               <div className="vault-action-info">
                 <span className="vault-action-title">Create new vault</span>
-                <span className="vault-action-desc">Create a new Revelio vault under a folder.</span>
+                <span className="vault-action-desc">Create a new Narrativ vault under a folder.</span>
               </div>
               <button className="vault-btn primary" disabled={isCreating}>
                 Create

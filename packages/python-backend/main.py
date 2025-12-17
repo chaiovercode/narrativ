@@ -1,5 +1,5 @@
 """
-Revelio Backend API
+Narrativ Backend API
 FastAPI server for the AI-powered story generation service.
 Designed for desktop app integration with Tauri.
 """
@@ -24,7 +24,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')
 load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 # Dynamic port for Tauri integration (defaults to 8000)
-PORT = int(os.getenv("REVELIO_PORT", "8000"))
+PORT = int(os.getenv("NARRATIV_PORT", "8000"))
 
 # Import from modular services
 from config import OUTPUT_DIR as CONFIG_OUTPUT_DIR, BRAND_DIR
@@ -68,7 +68,7 @@ from services.notes import (
 # =============================================================================
 
 app = FastAPI(
-    title="Revelio API",
+    title="Narrativ API",
     description="AI-powered visual story creation for social media",
     version="1.0.0"
 )
@@ -922,7 +922,7 @@ async def move_folder_endpoint(folder_path: str, data: dict):
 # =============================================================================
 
 if __name__ == "__main__":
-    print("\n🚀 Starting Revelio API...")
+    print("\n🚀 Starting Narrativ API...")
     print(f"📁 Output directory: {OUTPUT_DIR}")
     print(f"🌐 Server: http://localhost:{PORT}")
     print(f"📚 Docs: http://localhost:{PORT}/docs\n")
