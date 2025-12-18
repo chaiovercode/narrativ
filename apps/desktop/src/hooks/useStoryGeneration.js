@@ -6,6 +6,7 @@ export function useStoryGeneration({
   selectedStyle,
   imageSize,
   imageProvider,
+  llmProvider = 'gemini',
   inputMode,
   pastedText,
   brandId,
@@ -63,8 +64,11 @@ export function useStoryGeneration({
     try {
       let response;
 
+      // Get user-selected Ollama model from localStorage
+      const ollamaModel = localStorage.getItem('narrativ_ollama_model') || '';
+
       if (inputMode === 'paste') {
-        response = await fetch('http://localhost:8000/plan_from_text', {
+        response = await fetch('http://127.0.0.1:8000/plan_from_text', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -72,18 +76,22 @@ export function useStoryGeneration({
             num_slides: numSlides,
             aesthetic: aestheticString,
             topic: topic || 'Custom Content',
-            image_size: imageSize
+            image_size: imageSize,
+            llm_provider: llmProvider,
+            ollama_model: ollamaModel
           }),
         });
       } else {
-        response = await fetch('http://localhost:8000/plan_story', {
+        response = await fetch('http://127.0.0.1:8000/plan_story', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic,
             num_slides: numSlides,
             aesthetic: aestheticString,
-            image_size: imageSize
+            image_size: imageSize,
+            llm_provider: llmProvider,
+            ollama_model: ollamaModel
           }),
         });
       }
@@ -136,6 +144,8 @@ export function useStoryGeneration({
       caption: storyPlan.caption,
       hashtags: storyPlan.hashtags,
       image_size: storyPlan.image_size || imageSize,
+      provider: storyPlan.provider || llmProvider,
+      model: storyPlan.model,
       createdAt: new Date().toISOString()
     };
     onSaveResearch(newResearchBoard);
@@ -155,13 +165,17 @@ export function useStoryGeneration({
         image_size: imageSize || planToUse.image_size || 'story'
       };
 
-      const response = await fetch('http://localhost:8000/generate_from_plan', {
+      // Get HuggingFace quality mode from localStorage
+      const hfQualityMode = localStorage.getItem('narrativ_hf_quality_mode') || 'free';
+
+      const response = await fetch('http://127.0.0.1:8000/generate_from_plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan: planWithSize,
           provider: imageProvider,
           brand_id: brandId || null,
+          hf_quality_mode: hfQualityMode,
         }),
       });
 
@@ -187,6 +201,7 @@ export function useStoryGeneration({
           aesthetic: planToUse.aesthetic || storyPlan.aesthetic,
           style_name: planToUse.style_name || storyPlan.style_name,
           image_size: planToUse.image_size || imageSize,
+          provider: imageProvider,
           createdAt: new Date().toISOString()
         };
 
@@ -241,12 +256,16 @@ export function useStoryGeneration({
         image_size: imageSize || research.image_size || 'story'
       };
 
-      const response = await fetch('http://localhost:8000/generate_from_plan', {
+      // Get HuggingFace quality mode from localStorage
+      const hfQualityMode = localStorage.getItem('narrativ_hf_quality_mode') || 'free';
+
+      const response = await fetch('http://127.0.0.1:8000/generate_from_plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan: planWithSize,
           provider: imageProvider,
+          hf_quality_mode: hfQualityMode,
         }),
       });
 
@@ -268,6 +287,7 @@ export function useStoryGeneration({
         aesthetic: currentAesthetic,
         style_name: selectedStyle?.name || research.style_name,
         image_size: research.image_size || imageSize,
+        provider: imageProvider,
         createdAt: new Date().toISOString()
       };
 

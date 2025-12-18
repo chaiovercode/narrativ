@@ -3,6 +3,7 @@ Notes service for markdown note storage in vault.
 Supports folders, YAML frontmatter, and [[wiki-links]] to research boards.
 """
 
+import json
 import os
 import re
 import shutil
@@ -10,35 +11,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-# Vault path (set dynamically by main.py)
-VAULT_PATH: Optional[str] = None
-
-
-def set_vault_path(path: Optional[str]):
-    """Set the vault path for storage."""
-    global VAULT_PATH
-    VAULT_PATH = path
-
-
-def get_vault_path() -> Optional[str]:
-    """Get the current vault path."""
-    return VAULT_PATH
+from utils.vault import get_vault_path, set_vault_path
+from utils.text import slugify
 
 
 def get_notes_dir() -> Optional[Path]:
     """Get the notes directory, creating if needed."""
-    if not VAULT_PATH:
+    vault_path = get_vault_path()
+    if not vault_path:
         return None
-    notes_dir = Path(VAULT_PATH) / "notes"
+    notes_dir = Path(vault_path) / "notes"
     notes_dir.mkdir(exist_ok=True)
     return notes_dir
-
-
-def slugify(text: str) -> str:
-    """Convert text to a valid filename slug."""
-    clean = re.sub(r'[^\w\s-]', '', text.lower())
-    clean = re.sub(r'[-\s]+', '-', clean).strip('-')
-    return clean[:50] if clean else 'untitled'
 
 
 def note_to_markdown(note: Dict[str, Any]) -> str:
@@ -95,7 +79,6 @@ def markdown_to_note(content: str, filename: str, relative_path: str = '') -> Di
                     elif key == 'links':
                         # Parse links array
                         try:
-                            import json
                             note['links'] = json.loads(value.replace("'", '"'))
                         except:
                             note['links'] = []
@@ -328,6 +311,27 @@ def save_note(note: Dict[str, Any]) -> Dict[str, Any]:
     note_id = note.get('id') or str(int(datetime.now().timestamp() * 1000))
     note['id'] = note_id
 
+    # FIRST: Check if a note with this ID already exists (to prevent duplicates)
+    existing_file = None
+    existing_folder = ''
+    if note_id:
+        for md_file in notes_dir.rglob("*.md"):
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                relative_path = str(md_file.parent.relative_to(notes_dir))
+                if relative_path == '.':
+                    relative_path = ''
+                existing_note = markdown_to_note(content, md_file.name, relative_path)
+                if str(existing_note.get('id', '')) == str(note_id):
+                    existing_file = md_file
+                    existing_folder = relative_path
+                    # Preserve createdAt from existing note
+                    if not note.get('createdAt') and existing_note.get('createdAt'):
+                        note['createdAt'] = existing_note['createdAt']
+                    break
+            except:
+                pass
+
     # Set created timestamp for new notes
     if not note.get('createdAt'):
         note['createdAt'] = datetime.now().isoformat()
@@ -335,8 +339,9 @@ def save_note(note: Dict[str, Any]) -> Dict[str, Any]:
     # Set modified timestamp
     note['modifiedAt'] = datetime.now().isoformat()
 
-    # Get folder path
-    folder = note.get('folder', '')
+    # Get folder path - use existing folder if not specified
+    folder = note.get('folder', '') or note.get('path', '') or existing_folder
+    note['folder'] = folder
 
     # Ensure folder exists
     if folder:
@@ -347,8 +352,8 @@ def save_note(note: Dict[str, Any]) -> Dict[str, Any]:
         target_dir = notes_dir
 
     # Get current filename and generate new one based on title
-    old_filename = note.get('filename')
-    old_folder = note.get('path', '')
+    old_filename = note.get('filename') or (existing_file.name if existing_file else None)
+    old_folder = note.get('path', '') or existing_folder
     new_title = note.get('title', 'untitled')
     new_slug = slugify(new_title)
     new_filename = f"{new_slug}.md"
@@ -370,14 +375,18 @@ def save_note(note: Dict[str, Any]) -> Dict[str, Any]:
             counter += 1
 
     # Handle file rename/move if needed
-    if old_filename:
+    new_path = target_dir / new_filename
+
+    # If we found an existing file with the same ID, use that as the old path
+    if existing_file:
+        old_path = existing_file
+        if old_path.exists() and old_path != new_path:
+            old_path.rename(new_path)
+    elif old_filename:
         if old_folder:
             old_path = notes_dir / old_folder / old_filename
         else:
             old_path = notes_dir / old_filename
-        new_path = target_dir / new_filename
-
-        # Move/rename the file if old one exists
         if old_path.exists() and old_path != new_path:
             old_path.rename(new_path)
 
@@ -409,7 +418,11 @@ def delete_note(note_id: str) -> bool:
     if not notes_dir:
         return False
 
-    # Search recursively
+    # Convert ID to string for comparison
+    note_id_str = str(note_id)
+    deleted_any = False
+
+    # Search recursively and delete ALL matching notes (handle duplicates)
     for md_file in notes_dir.rglob("*.md"):
         try:
             content = md_file.read_text(encoding='utf-8')
@@ -417,12 +430,12 @@ def delete_note(note_id: str) -> bool:
             if relative_path == '.':
                 relative_path = ''
             note = markdown_to_note(content, md_file.name, relative_path)
-            if note.get('id') == note_id:
+            if str(note.get('id', '')) == note_id_str:
                 md_file.unlink()
-                return True
-        except Exception:
-            pass
-    return False
+                deleted_any = True
+        except Exception as e:
+            print(f"Error deleting note {md_file}: {e}")
+    return deleted_any
 
 
 def get_note_by_id(note_id: str) -> Optional[Dict[str, Any]]:
@@ -432,3 +445,124 @@ def get_note_by_id(note_id: str) -> Optional[Dict[str, Any]]:
         if note.get('id') == note_id:
             return note
     return None
+
+
+def get_duplicate_name(base_name: str, existing_names: List[str]) -> str:
+    """Generate a duplicate name with (1), (2), etc. suffix."""
+    # Check if name already has a number suffix like "Name (1)"
+    match = re.match(r'^(.+?)\s*\((\d+)\)$', base_name)
+    if match:
+        base = match.group(1).strip()
+    else:
+        base = base_name
+
+    # Find the next available number
+    counter = 1
+    while True:
+        new_name = f"{base} ({counter})"
+        if new_name not in existing_names:
+            return new_name
+        counter += 1
+
+
+def duplicate_note(note_id: str) -> Dict[str, Any]:
+    """Duplicate a note with same name + (1), (2), etc."""
+    note = get_note_by_id(note_id)
+    if not note:
+        raise ValueError(f"Note not found: {note_id}")
+
+    # Get all existing note titles in the same folder
+    all_notes = load_notes()
+    folder = note.get('folder', '')
+    existing_titles = [n.get('title', '') for n in all_notes if n.get('folder', '') == folder]
+
+    # Generate new title
+    new_title = get_duplicate_name(note.get('title', 'Untitled'), existing_titles)
+
+    # Create new note (without id to generate new one)
+    new_note = {
+        'title': new_title,
+        'content': note.get('content', ''),
+        'folder': folder,
+        'links': note.get('links', []).copy(),
+    }
+
+    return save_note(new_note)
+
+
+def duplicate_folder(folder_path: str) -> Dict[str, Any]:
+    """Duplicate a folder and all its contents with same name + (1), (2), etc."""
+    notes_dir = get_notes_dir()
+    if not notes_dir:
+        raise ValueError("No vault configured")
+
+    source_path = notes_dir / folder_path
+    if not source_path.exists():
+        raise ValueError(f"Folder not found: {folder_path}")
+
+    # Get parent directory and folder name
+    parent_path = source_path.parent
+    folder_name = source_path.name
+
+    # Get existing folder names in parent
+    existing_names = [d.name for d in parent_path.iterdir() if d.is_dir()]
+
+    # Generate new name
+    new_name = get_duplicate_name(folder_name, existing_names)
+    new_path = parent_path / new_name
+
+    # Copy the folder
+    shutil.copytree(source_path, new_path)
+
+    # Update all notes in the new folder to have new IDs, titles, and updated paths
+    new_folder_path = str(new_path.relative_to(notes_dir))
+
+    # First, collect all existing note titles (from original folder and new folder)
+    all_notes = load_notes()
+
+    for md_file in new_path.rglob("*.md"):
+        try:
+            content = md_file.read_text(encoding='utf-8')
+            relative_path = str(md_file.parent.relative_to(notes_dir))
+            if relative_path == '.':
+                relative_path = ''
+            note = markdown_to_note(content, md_file.name, relative_path)
+
+            # Get existing titles in the same folder for duplicate naming
+            existing_titles = [n.get('title', '') for n in all_notes if n.get('folder', '') == relative_path]
+
+            # Generate new title with (1), (2), etc.
+            old_title = note.get('title', 'Untitled')
+            new_title = get_duplicate_name(old_title, existing_titles)
+
+            # Add this new title to existing titles for next iteration
+            existing_titles.append(new_title)
+
+            # Generate new ID for the duplicated note
+            note['id'] = str(int(datetime.now().timestamp() * 1000))
+            note['title'] = new_title
+            note['folder'] = relative_path
+            note['path'] = relative_path
+            note['createdAt'] = datetime.now().isoformat()
+
+            # Generate new filename based on new title
+            new_slug = slugify(new_title)
+            new_filename = f"{new_slug}.md"
+            new_file_path = md_file.parent / new_filename
+
+            # Write to new file with new title
+            markdown = note_to_markdown(note)
+            new_file_path.write_text(markdown, encoding='utf-8')
+
+            # Remove old file if filename changed
+            if md_file != new_file_path:
+                md_file.unlink()
+
+        except Exception as e:
+            print(f"Warning: Failed to update duplicated note {md_file}: {e}")
+
+    return {
+        'name': new_name,
+        'path': new_folder_path,
+        'parent': str(parent_path.relative_to(notes_dir)) if parent_path != notes_dir else ''
+    }

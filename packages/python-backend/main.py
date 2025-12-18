@@ -7,7 +7,10 @@ Designed for desktop app integration with Tauri.
 import os
 import datetime
 import traceback
+import shutil
 from pathlib import Path
+
+from utils.vault import get_vault_path
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
@@ -48,7 +51,7 @@ from services.image import generate_story_from_plan_parallel
 from services.consistency import generate_story_characters
 from services.brand import get_brands, save_brand, delete_brand, get_brand_by_id
 from services.boards import load_boards, add_board, delete_board, update_board, set_vault_path as set_boards_vault_path, cleanup_orphaned_attachments, sync_attachments_with_boards
-from services.styles import set_vault_path as set_styles_vault_path
+from services.styles import set_vault_path as set_styles_vault_path, sync_predefined_styles_to_vault, load_all_vault_styles
 from services.notes import (
     load_notes,
     load_folders,
@@ -60,6 +63,8 @@ from services.notes import (
     rename_folder,
     move_folder,
     move_note,
+    duplicate_note,
+    duplicate_folder,
     set_vault_path as set_notes_vault_path
 )
 
@@ -115,6 +120,8 @@ class StoryRequest(BaseModel):
     num_slides: int = 5
     aesthetic: str = ""
     image_size: str = "story"  # 'story' (9:16) or 'square' (1:1)
+    llm_provider: str = "gemini"  # 'gemini' or 'ollama'
+    ollama_model: str = ""  # Optional: specific Ollama model to use
 
 
 class TextToSlidesRequest(BaseModel):
@@ -123,12 +130,15 @@ class TextToSlidesRequest(BaseModel):
     num_slides: int = 5
     aesthetic: str = ""
     image_size: str = "story"
+    llm_provider: str = "gemini"
+    ollama_model: str = ""
 
 
 class GenerateFromPlanRequest(BaseModel):
     plan: dict
-    provider: str = "gemini-flash"  # gemini-flash, gemini-pro, fal
+    provider: str = "gemini-flash"  # gemini-flash, gemini-pro, fal, huggingface
     brand_id: Optional[str] = None  # optional brand ID for watermark
+    hf_quality_mode: str = "free"  # 'quality' (premium models) or 'free' (free tier)
 
 
 # =============================================================================
@@ -147,7 +157,7 @@ def create_story_folder(topic: str) -> tuple[str, str]:
 def files_to_urls(file_paths: list, folder_name: str) -> list:
     """Converts file paths to serving URLs."""
     return [
-        f"http://localhost:{PORT}/images/{folder_name}/{os.path.basename(f)}"
+        f"http://127.0.0.1:{PORT}/images/{folder_name}/{os.path.basename(f)}"
         for f in file_paths
     ]
 
@@ -158,8 +168,163 @@ def files_to_urls(file_paths: list, folder_name: str) -> list:
 
 @app.get("/")
 async def root():
-    """Health check endpoint."""
-    return {"status": "ok", "service": "Story Generator API"}
+    """Root endpoint."""
+    return {"status": "ok", "service": "Narrativ API"}
+
+
+@app.get("/health")
+async def health_check():
+    """Fast health check endpoint for app initialization."""
+    return {"status": "ready", "vault": VAULT_PATH is not None}
+
+
+@app.get("/check_ollama")
+async def check_ollama():
+    """Check if Ollama is running locally."""
+    from services.clients import check_ollama as do_check_ollama
+    available = do_check_ollama()
+    return {"available": available}
+
+
+@app.get("/ollama_models")
+async def get_ollama_models():
+    """Get list of available Ollama models."""
+    from services.clients import get_ollama_models, check_ollama as do_check_ollama
+
+    if not do_check_ollama():
+        return {"available": False, "models": [], "message": "Ollama not running"}
+
+    models = get_ollama_models()
+    return {
+        "available": True,
+        "models": models,
+        "message": None
+    }
+
+
+class ReloadClientsRequest(BaseModel):
+    google_api_key: Optional[str] = None
+    fal_api_key: Optional[str] = None
+    hf_api_key: Optional[str] = None
+    tavily_api_key: Optional[str] = None
+
+
+@app.post("/reload_clients")
+async def reload_clients(request: ReloadClientsRequest):
+    """
+    Reload AI clients with new API keys.
+    Keys are passed directly to avoid depending on env vars.
+    """
+    import os
+
+    # Update environment variables with new keys
+    if request.google_api_key is not None:
+        if request.google_api_key:
+            os.environ["GOOGLE_API_KEY"] = request.google_api_key
+        else:
+            os.environ.pop("GOOGLE_API_KEY", None)
+
+    if request.fal_api_key is not None:
+        if request.fal_api_key:
+            os.environ["FAL_API_KEY"] = request.fal_api_key
+        else:
+            os.environ.pop("FAL_API_KEY", None)
+
+    if request.hf_api_key is not None:
+        if request.hf_api_key:
+            os.environ["HF_API_KEY"] = request.hf_api_key
+        else:
+            os.environ.pop("HF_API_KEY", None)
+
+    if request.tavily_api_key is not None:
+        if request.tavily_api_key:
+            os.environ["TAVILY_API_KEY"] = request.tavily_api_key
+        else:
+            os.environ.pop("TAVILY_API_KEY", None)
+
+    # Reinitialize clients with new env vars
+    from services.clients import init_clients
+    result = init_clients()
+    print(f"[main] Clients reloaded: {result}")
+    return {"success": True, "clients": result}
+
+
+@app.get("/check_providers")
+async def check_providers():
+    """
+    Check availability of all AI providers.
+    Returns status for LLM (text), Vision (style extraction), and Image generation.
+    """
+    # Import module to get current values (not cached at import time)
+    from services import clients
+    from services.clients import (
+        check_ollama as do_check_ollama,
+        get_ollama_models, has_ollama_vision_model, has_ollama_text_model
+    )
+
+    # Get current client values
+    gemini_client = clients.gemini_client
+    fal_client = clients.fal_client
+    hf_api_key = clients.hf_api_key
+
+    print(f"[check_providers] Gemini: {gemini_client is not None}, Fal: {fal_client is not None}, HF: {hf_api_key is not None}")
+
+    # Check Ollama
+    ollama_running = do_check_ollama()
+    ollama_models = get_ollama_models() if ollama_running else []
+    ollama_vision = has_ollama_vision_model()
+    ollama_text = has_ollama_text_model()
+
+    return {
+        # LLM/Text providers
+        "llm": {
+            "gemini": {
+                "available": gemini_client is not None,
+                "message": None if gemini_client else "Add Google API key in Settings"
+            },
+            "ollama": {
+                "available": ollama_running and ollama_text is not None,
+                "running": ollama_running,
+                "model": ollama_text,
+                "models": ollama_models,
+                "message": None if (ollama_running and ollama_text) else (
+                    "Start Ollama to use local AI" if not ollama_running else
+                    "Pull a model: ollama pull qwen2.5:7b"
+                )
+            }
+        },
+        # Vision providers (for style extraction)
+        "vision": {
+            "gemini": {
+                "available": gemini_client is not None,
+                "message": None if gemini_client else "Add Google API key in Settings"
+            },
+            "ollama": {
+                "available": ollama_running and ollama_vision is not None,
+                "running": ollama_running,
+                "model": ollama_vision,
+                "message": None if (ollama_running and ollama_vision) else (
+                    "Start Ollama to use local vision" if not ollama_running else
+                    "Pull a vision model: ollama pull llava:7b"
+                )
+            }
+        },
+        # Image generation providers
+        "image": {
+            "fal": {
+                "available": fal_client is not None,
+                "message": None if fal_client else "Add Fal API key in Settings"
+            },
+            "gemini": {
+                "available": gemini_client is not None,
+                "message": None if gemini_client else "Add Google API key in Settings"
+            },
+            "huggingface": {
+                "available": hf_api_key is not None,
+                "message": None if hf_api_key else "Free option - add HuggingFace API key in Settings"
+            }
+        }
+    }
 
 
 # =============================================================================
@@ -196,9 +361,12 @@ async def set_vault(request: VaultRequest):
     research_dir = os.path.join(VAULT_PATH, "research")
     os.makedirs(research_dir, exist_ok=True)
 
-    # Create styles directory
+    # Create styles directory and sync predefined styles
     styles_dir = os.path.join(VAULT_PATH, "styles")
     os.makedirs(styles_dir, exist_ok=True)
+    styles_synced = sync_predefined_styles_to_vault()
+    if styles_synced > 0:
+        print(f"[vault] Synced {styles_synced} predefined styles to vault")
 
     # Create notes directory
     notes_dir = os.path.join(VAULT_PATH, "notes")
@@ -268,13 +436,13 @@ async def sync_vault():
     # Count research files
     research_dir = os.path.join(VAULT_PATH, "research")
     if os.path.exists(research_dir):
-        research_files = list(Path(research_dir).glob("*.md"))
+        research_files = list(Path(research_dir).rglob("*.md"))
         result["research"] = {"count": len(research_files), "path": research_dir}
 
     # Count notes
     notes_dir = os.path.join(VAULT_PATH, "notes")
     if os.path.exists(notes_dir):
-        note_files = list(Path(notes_dir).glob("*.md"))
+        note_files = list(Path(notes_dir).rglob("*.md"))
         result["notes"] = {"count": len(note_files), "path": notes_dir}
 
     # Count styles
@@ -409,6 +577,7 @@ async def plan_story(request: StoryRequest):
     """
     Phase 1: Research topic and create story plan.
     Returns plan for user review before image generation.
+    llm_provider: 'gemini' or 'ollama' for research/planning
     """
     if not request.topic.strip():
         raise HTTPException(status_code=400, detail="Topic is required")
@@ -416,6 +585,11 @@ async def plan_story(request: StoryRequest):
         raise HTTPException(status_code=400, detail="Slides must be between 1-10")
 
     try:
+        # Set LLM provider and model for this request
+        from services.llm import set_provider, set_ollama_model
+        set_provider(request.llm_provider)
+        set_ollama_model(request.ollama_model)
+
         plan = research_story_concept(
             topic=request.topic,
             num_slides=request.num_slides,
@@ -425,8 +599,10 @@ async def plan_story(request: StoryRequest):
         if not plan:
             raise HTTPException(status_code=500, detail="Failed to research topic")
 
-        # Add image_size to the plan
+        # Add image_size and provider info to the plan
         plan['image_size'] = request.image_size
+        plan['provider'] = request.llm_provider
+        plan['model'] = request.ollama_model if request.llm_provider == 'ollama' else 'gemini-2.0-flash'
 
         return {"plan": plan}
 
@@ -496,6 +672,11 @@ async def plan_from_text(request: TextToSlidesRequest):
         raise HTTPException(status_code=400, detail="Slides must be between 1-10")
 
     try:
+        # Set LLM provider and model for this request
+        from services.llm import set_provider, set_ollama_model
+        set_provider(request.llm_provider)
+        set_ollama_model(request.ollama_model)
+
         plan = create_slides_from_text(
             text=request.text,
             topic=request.topic or "Custom Content",
@@ -506,8 +687,10 @@ async def plan_from_text(request: TextToSlidesRequest):
         if not plan:
             raise HTTPException(status_code=500, detail="Failed to create slides from text")
 
-        # Add image_size to the plan
+        # Add image_size and provider info to the plan
         plan['image_size'] = request.image_size
+        plan['provider'] = request.llm_provider
+        plan['model'] = request.ollama_model if request.llm_provider == 'ollama' else 'gemini-2.0-flash'
 
         return {"plan": plan}
 
@@ -529,11 +712,14 @@ async def generate_from_plan(request: GenerateFromPlanRequest):
     - Seed-based style consistency for fal.ai
     - Retry logic for rate limits
     """
+    print(f"[generate] Received request - provider: {request.provider}, slides: {len(request.plan.get('slides', []))}", flush=True)
+
     if not request.plan or 'topic' not in request.plan:
         raise HTTPException(status_code=400, detail="Valid plan is required")
 
     try:
         folder_name, output_path = create_story_folder(request.plan['topic'])
+        print(f"[generate] Output path: {output_path}", flush=True)
 
         # Generate consistency data for visual coherence across slides
         consistency_data = None
@@ -545,13 +731,32 @@ async def generate_from_plan(request: GenerateFromPlanRequest):
             )
 
         # Use parallel generation with consistency
+        print(f"[generate] Starting image generation with provider: {request.provider} (hf_mode: {request.hf_quality_mode})", flush=True)
         generated_files = generate_story_from_plan_parallel(
             request.plan,
             output_dir=output_path,
             provider=request.provider,
             brand_id=request.brand_id,
-            consistency_data=consistency_data
+            consistency_data=consistency_data,
+            hf_quality_mode=request.hf_quality_mode
         )
+        print(f"[generate] Generated {len(generated_files)} files", flush=True)
+
+        # Sync to vault if enabled
+        vault_path = get_vault_path()
+        if vault_path:
+            try:
+                vault_attachments_path = os.path.join(vault_path, "attachments", folder_name)
+                os.makedirs(vault_attachments_path, exist_ok=True)
+                
+                print(f"[sync] Copying {len(generated_files)} images to vault: {vault_attachments_path}", flush=True)
+                for file_path in generated_files:
+                    if os.path.exists(file_path):
+                        shutil.copy2(file_path, vault_attachments_path)
+                        
+            except Exception as e:
+                 print(f"[sync] Failed to copy to vault: {e}", flush=True)
+                 traceback.print_exc()
 
         return {"images": files_to_urls(generated_files, folder_name)}
 
@@ -598,13 +803,19 @@ async def get_styles():
     """
     Get all available styles (predefined + custom).
     Returns both predefined styles and user-saved custom styles.
+    Prefers vault storage when available.
     """
     try:
-        predefined = get_predefined_styles()
-        custom = load_custom_styles()
+        # Try to load from vault first
+        vault_predefined, vault_custom = load_all_vault_styles()
+
+        # Use vault styles if available, otherwise fall back to code/legacy
+        predefined = vault_predefined if vault_predefined else get_predefined_styles()
+        custom = vault_custom if vault_custom is not None else load_custom_styles()
+
         return {
             "predefined": predefined,
-            "custom": custom
+            "custom": custom or []
         }
     except Exception as e:
         traceback.print_exc()
@@ -836,6 +1047,19 @@ async def move_note_to_folder(note_id: str, data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/notes/{note_id}/duplicate")
+async def duplicate_note_endpoint(note_id: str):
+    """Duplicate a note with same name + (1), (2), etc."""
+    try:
+        note = duplicate_note(note_id)
+        return {"status": "ok", "note": note}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # =============================================================================
 # FOLDERS ENDPOINTS
 # =============================================================================
@@ -912,6 +1136,19 @@ async def move_folder_endpoint(folder_path: str, data: dict):
         return {"status": "ok", "folder": folder}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/folders/{folder_path:path}/duplicate")
+async def duplicate_folder_endpoint(folder_path: str):
+    """Duplicate a folder and all its contents with same name + (1), (2), etc."""
+    try:
+        folder = duplicate_folder(folder_path)
+        return {"status": "ok", "folder": folder}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

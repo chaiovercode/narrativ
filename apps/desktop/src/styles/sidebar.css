@@ -652,3 +652,32 @@
   color: var(--text-secondary);
   font-weight: 600;
 }
+
+/* =============================================================================
+   PROVIDER MESSAGES
+   ============================================================================= */
+
+.provider-message {
+  font-size: var(--text-xs);
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.provider-message.warning {
+  color: var(--warning);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.provider-message.info {
+  color: var(--accent);
+  background: var(--accent-muted);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.provider-spacer {
+  height: var(--space-md);
+}

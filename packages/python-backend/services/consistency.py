@@ -5,7 +5,7 @@ Generates detailed character and element descriptions to embed in image prompts.
 
 import json
 from utils.json_utils import clean_json_response
-from .clients import gemini_client
+from .llm import generate_text
 
 
 def generate_story_characters(topic: str, slides: list, aesthetic: dict) -> dict:
@@ -85,11 +85,8 @@ IMPORTANT:
 Return ONLY valid JSON. No markdown, no explanation."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         consistency_data = json.loads(text)
 
         # Log what we found

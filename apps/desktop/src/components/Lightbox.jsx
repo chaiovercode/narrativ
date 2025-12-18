@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function Lightbox({
   selectedImage,
@@ -12,26 +12,54 @@ export function Lightbox({
 }) {
   const [copied, setCopied] = useState(false);
 
-  if (!selectedImage) return null;
-
-  const images = selectedImage.board?.images || generatedImages;
+  const images = selectedImage?.board?.images || generatedImages || [];
   const totalImages = images.length;
 
-  const handlePrev = (e) => {
-    e.stopPropagation();
-    if (selectedImage.idx > 0) {
+  const handleClose = useCallback(() => {
+    setSelectedImage(null);
+  }, [setSelectedImage]);
+
+  const handlePrev = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (selectedImage && selectedImage.idx > 0) {
       const newIdx = selectedImage.idx - 1;
       setSelectedImage({ src: images[newIdx], idx: newIdx, board: selectedImage.board });
     }
-  };
+  }, [selectedImage, images, setSelectedImage]);
 
-  const handleNext = (e) => {
-    e.stopPropagation();
-    if (selectedImage.idx < totalImages - 1) {
+  const handleNext = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (selectedImage && selectedImage.idx < totalImages - 1) {
       const newIdx = selectedImage.idx + 1;
       setSelectedImage({ src: images[newIdx], idx: newIdx, board: selectedImage.board });
     }
-  };
+  }, [selectedImage, totalImages, images, setSelectedImage]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!selectedImage) return;
+
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case 'Escape':
+          handleClose();
+          break;
+        case 'ArrowLeft':
+          handlePrev();
+          break;
+        case 'ArrowRight':
+          handleNext();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage, handleClose, handlePrev, handleNext]);
+
+  if (!selectedImage) return null;
 
   const handleCopyCaption = () => {
     const caption = selectedImage.board?.caption || storyCaption;
@@ -51,8 +79,12 @@ export function Lightbox({
   const hashtags = selectedImage.board?.hashtags || storyHashtags;
 
   return (
-    <div className="lightbox-overlay" onClick={() => setSelectedImage(null)}>
-      <button className="close-btn">&times;</button>
+    <div className="lightbox-overlay" onClick={handleClose}>
+      <button className="lightbox-close-btn" onClick={handleClose}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       {selectedImage.idx > 0 && (
         <button className="lightbox-nav lightbox-prev" onClick={handlePrev}>

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
 import Create from './pages/Create';
 import Gallery from './pages/Gallery';
 import VaultSetup from './pages/VaultSetup';
@@ -7,12 +6,12 @@ import SettingsModal from './components/SettingsModal';
 import NotesPanel from './components/notes/NotesPanel';
 import NoteContentView from './components/notes/NoteContentView';
 import StatusBar from './components/StatusBar';
+import LoadingScreen from './components/LoadingScreen';
 import { useNotes } from './hooks/useNotes';
 import { useBoards } from './hooks/useBoards';
-import { setVaultPath as setBackendVaultPath } from './services/api';
+import { useAppInit } from './hooks/useAppInit';
 import './App.css';
 import './styles/status-bar.css';
-import './styles/note-content.css';
 
 // Obsidian-style icons
 const Icons = {
@@ -55,14 +54,22 @@ const Icons = {
 
 function App() {
   const [activeView, setActiveView] = useState('create');
-  const [vaultPath, setVaultPath] = useState(null);
-  const [vaultName, setVaultName] = useState(null);
-  const [vaultLoading, setVaultLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [showVaultPicker, setShowVaultPicker] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [openResearchTopic, setOpenResearchTopic] = useState(null);
+
+  // App initialization hook - handles backend, vault, and data loading
+  const {
+    status: initStatus,
+    isReady,
+    vaultPath,
+    vaultName,
+    setVaultPath,
+    setVaultName,
+    handleVaultSelected,
+  } = useAppInit();
 
   // Notes hooks for split view
   const {
@@ -72,10 +79,12 @@ function App() {
     createNote,
     updateNote,
     removeNote,
+    duplicateNote,
     createFolder,
     removeFolder,
     renameFolder,
     moveFolder,
+    duplicateFolder,
     moveNote,
     searchNotes,
     refreshNotes,
@@ -118,8 +127,9 @@ function App() {
   const handleSaveNote = useCallback(
     async (noteData) => {
       try {
-        if (selectedNote?.id) {
-          const saved = await updateNote(selectedNote.id, noteData);
+        const noteId = noteData.id || selectedNote?.id;
+        if (noteId) {
+          const saved = await updateNote(noteId, noteData);
           setSelectedNote(saved);
           return saved;
         } else {
@@ -197,87 +207,17 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Check if vault is configured on startup
-  useEffect(() => {
-    const checkVault = async () => {
-      try {
-        const path = await invoke('get_vault_path');
-        if (path) {
-          setVaultPath(path);
-          // Extract vault name from path
-          const name = path.split('/').pop();
-          setVaultName(name);
-          // Notify Python backend of vault path
-          try {
-            await setBackendVaultPath(path);
-          } catch (err) {
-            console.warn('Failed to notify backend of vault path:', err);
-          }
-        }
-      } catch (err) {
-        console.log('No vault configured:', err);
-      } finally {
-        setVaultLoading(false);
-      }
-    };
-    checkVault();
-  }, []);
-
-  // Ensure vault path is set when backend becomes ready
-  useEffect(() => {
-    let vaultPathSent = false;
-
-    const syncVaultPath = async () => {
-      if (vaultPathSent || !vaultPath) return;
-
-      try {
-        // Try to set vault path directly - this verifies backend is reachable
-        await setBackendVaultPath(vaultPath);
-        vaultPathSent = true;
-        console.log('Successfully synced vault path to backend');
-      } catch (err) {
-        // Backend not ready/reachable yet, will retry
-      }
-    };
-
-    syncVaultPath();
-    const interval = setInterval(syncVaultPath, 2000);
-    return () => clearInterval(interval);
-  }, [vaultPath]);
-
-  // Handle vault selection
-  const handleVaultSelected = async (path, name) => {
-    setVaultPath(path);
-    setVaultName(name);
-    // Notify Python backend of vault path
-    try {
-      await setBackendVaultPath(path);
-    } catch (err) {
-      console.warn('Failed to notify backend of vault path:', err);
-      // Continue anyway - backend will be notified on next API call
-    }
-  };
-
-  // Show loading while checking vault
-  if (vaultLoading) {
-    return (
-      <div className="vault-setup">
-        <div className="vault-setup-content">
-          <div className="vault-logo">
-            <span className="vault-logo-icon">R</span>
-          </div>
-          <p style={{ color: '#888' }}>Loading...</p>
-        </div>
-      </div>
-    );
+  // Show loading screen while initializing
+  if (!isReady) {
+    return <LoadingScreen status={initStatus} />;
   }
 
   // Show vault setup if no vault configured or user wants to switch
   if (!vaultPath || showVaultPicker) {
     return (
       <VaultSetup
-        onVaultSelected={(path, name) => {
-          handleVaultSelected(path, name);
+        onVaultSelected={async (path, name) => {
+          await handleVaultSelected(path, name);
           setShowVaultPicker(false);
         }}
         onClose={() => setShowVaultPicker(false)}
@@ -389,12 +329,17 @@ function App() {
           onSelectNote={handleSelectNote}
           onNewNote={handleNewNote}
           onDeleteNote={handleDeleteNote}
+          onDuplicateNote={duplicateNote}
           onCreateFolder={createFolder}
           onDeleteFolder={removeFolder}
+          onDuplicateFolder={duplicateFolder}
           onRenameFolder={renameFolder}
           onMoveNote={moveNote}
           onMoveFolder={moveFolder}
-          onRenameNote={(id, newName) => updateNote(id, { title: newName })}
+          onRenameNote={(id, newName) => {
+            const note = notes.find(n => n.id === id);
+            updateNote(id, { title: newName, folder: note?.folder, path: note?.path || note?.folder, filename: note?.filename });
+          }}
           onRefresh={refreshNotes}
           searchNotes={searchNotes}
           getTreeStructure={getTreeStructure}

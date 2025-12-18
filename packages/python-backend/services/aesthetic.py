@@ -4,7 +4,7 @@ Aesthetic definition service - defines visual style for stories.
 
 import json
 from utils.json_utils import clean_json_response
-from .clients import gemini_client
+from .llm import generate_text
 
 
 def define_series_aesthetic(topic: str, user_aesthetic: str = None) -> dict:
@@ -94,11 +94,8 @@ Return ONLY valid JSON. No markdown, no explanation, no preamble.
 Generate the visual system now."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         aesthetic = json.loads(text)
         print(f"   [aesthetic] Style: {aesthetic.get('art_style', 'N/A')}")
         return aesthetic

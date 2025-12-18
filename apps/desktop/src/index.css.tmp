@@ -1,0 +1,800 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ============================================
+     DESIGN TOKENS - Duolingo-inspired Playful UI
+     ============================================ */
+
+  /* Spacing Scale */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 0.75rem;   /* 12px */
+  --space-lg: 1rem;      /* 16px */
+  --space-xl: 1.5rem;    /* 24px */
+  --space-2xl: 2rem;     /* 32px */
+  --space-3xl: 3rem;     /* 48px */
+
+  /* Border Radius - Extra Chunky & Playful (Duolingo style) */
+  --radius-xs: 8px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  /* Typography Scale - Bolder, more playful */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.375rem;   /* 22px */
+  --text-2xl: 1.75rem;   /* 28px */
+  --text-3xl: 2.25rem;   /* 36px */
+  --text-4xl: 3rem;      /* 48px */
+
+  /* Transitions - Extra Bouncy! (Duolingo signature) */
+  --transition-fast: 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-normal: 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-slow: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --transition-spring: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ============================================
+     COLORS - Rich Deep Dark Mode
+     ============================================ */
+
+  /* Backgrounds - Deep & Rich */
+  --bg-base: #0c0c14;
+  --bg-surface: #12121c;
+  --bg-overlay: #1a1a28;
+  --bg-muted: #252536;
+
+  /* Legacy aliases */
+  --bg-primary: #0c0c14;
+  --bg-secondary: #12121c;
+  --bg-tertiary: #12121c;
+  --bg-card: #12121c;
+  --bg-elevated: #1a1a28;
+  --bg-window: #0c0c14;
+  --bg-content: #0c0c14;
+  --bg-sidebar: #12121c;
+  --bg-input: #1a1a28;
+  --bg-hover: #252536;
+  --bg-active: #303045;
+
+  /* Text - High Contrast */
+  --text-primary: #f0f0f8;
+  --text-secondary: #a0a0b8;
+  --text-muted: #606078;
+
+  /* Accent - Teal */
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-muted: rgba(45, 212, 191, 0.15);
+  --accent-glow: rgba(45, 212, 191, 0.25);
+  --accent-primary: #2dd4bf;
+  --accent-blue: #60a5fa;
+
+  /* Gradients - Disabled, using solid colors */
+  --gradient-accent: #2dd4bf;
+  --gradient-surface: var(--bg-base);
+  --gradient-glow: transparent;
+
+  /* Status */
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+
+  /* Borders - Subtle Glass Effect */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-medium: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(45, 212, 191, 0.5);
+
+  /* Shadows - 3D Chunky Style */
+  --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 0 rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 6px 0 rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 30px rgba(45, 212, 191, 0.2);
+
+  /* Button 3D effect colors */
+  --btn-shadow-primary: #1a9e8f;
+  --btn-shadow-secondary: #1a1a28;
+  --btn-shadow-danger: #c45555;
+
+  /* Fonts - Friendly & Rounded */
+  --font-sans: 'Nunito', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 500;
+  background: var(--gradient-surface);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar - Chunky & Rounded */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+  background-clip: padding-box;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.4);
+  color: var(--text-primary);
+}
+
+/* Focus styles - Playful */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-md);
+}
+
+/* Global bounce animation */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes celebrate {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-5deg); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  75% { transform: scale(1.2) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes streak-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--warning));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--warning));
+    transform: scale(1.1);
+  }
+}
+
+@keyframes level-up {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.3) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes slide-in-bottom {
+  0% { transform: translateY(30px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  0% { transform: translateX(30px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes jiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); }
+}
+
+@keyframes tada {
+  0% { transform: scale(1) rotate(0deg); }
+  10%, 20% { transform: scale(0.9) rotate(-3deg); }
+  30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+  40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes rubber-band {
+  0% { transform: scale(1); }
+  30% { transform: scaleX(1.25) scaleY(0.75); }
+  40% { transform: scaleX(0.75) scaleY(1.25); }
+  50% { transform: scaleX(1.15) scaleY(0.85); }
+  65% { transform: scaleX(0.95) scaleY(1.05); }
+  75% { transform: scaleX(1.05) scaleY(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* =============================================================================
+   DUOLINGO-STYLE GAMIFICATION COMPONENTS
+   ============================================================================= */
+
+/* Progress Bar - Chunky & Animated */
+.progress-bar {
+  height: 16px;
+  background: var(--bg-overlay);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+  border: 2px solid var(--border-medium);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+}
+
+.progress-bar-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 200%; }
+}
+
+/* XP Badge - Duolingo Style */
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--accent);
+  box-shadow: 0 3px 0 rgba(45, 212, 191, 0.3);
+  transition: all var(--transition-bounce);
+}
+
+.xp-badge:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 0 rgba(45, 212, 191, 0.3);
+}
+
+.xp-badge.earned {
+  animation: rubber-band 0.6s ease;
+}
+
+/* Streak Counter - Fire Style */
+.streak-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--text-base);
+  font-weight: 800;
+  box-shadow: 0 4px 0 #cc4400, 0 8px 20px rgba(255, 107, 53, 0.3);
+  position: relative;
+  top: 0;
+  transition: all var(--transition-fast);
+}
+
+.streak-counter:hover {
+  top: -2px;
+  box-shadow: 0 6px 0 #cc4400, 0 12px 25px rgba(255, 107, 53, 0.4);
+}
+
+.streak-counter .fire-icon {
+  animation: streak-glow 1.5s ease-in-out infinite;
+}
+
+/* Level Badge - Circular */
+.level-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: 900;
+  box-shadow: 0 4px 0 var(--btn-shadow-primary), inset 0 -4px 0 rgba(0,0,0,0.1);
+  border: 3px solid var(--bg-base);
+  position: relative;
+  transition: all var(--transition-bounce);
+}
+
+.level-badge::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.3);
+  border-radius: var(--radius-full);
+}
+
+.level-badge:hover {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.level-badge.level-up {
+  animation: level-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Achievement Card */
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--bg-surface);
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+  transition: all var(--transition-bounce);
+  cursor: pointer;
+}
+
+.achievement-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 0 var(--btn-shadow-secondary);
+  border-color: var(--accent);
+}
+
+.achievement-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--accent-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.achievement-card.locked .achievement-icon {
+  background: var(--bg-muted);
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.achievement-info h4 {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.achievement-info p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Encouraging Toast Message */
+.toast-message {
+  position: fixed;
+  bottom: var(--space-2xl);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  padding: var(--space-lg) var(--space-2xl);
+  background: var(--bg-surface);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 0 var(--btn-shadow-primary), 0 10px 30px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  z-index: 9999;
+  animation: toast-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.toast-message.success {
+  border-color: var(--success);
+  box-shadow: 0 6px 0 #2a9d4a, 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.toast-message .toast-icon {
+  font-size: 1.5rem;
+}
+
+@keyframes toast-in {
+  0% { transform: translateX(-50%) translateY(100px) scale(0.8); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes toast-out {
+  0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(100px) scale(0.8); opacity: 0; }
+}
+
+.toast-message.hiding {
+  animation: toast-out 0.3s ease forwards;
+}
+
+/* Daily Goal Ring */
+.goal-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.goal-ring svg {
+  transform: rotate(-90deg);
+}
+
+.goal-ring-bg {
+  fill: none;
+  stroke: var(--bg-muted);
+  stroke-width: 8;
+}
+
+.goal-ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.goal-ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.goal-ring-value {
+  font-size: var(--text-xl);
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.goal-ring-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* =============================================================================
+   DUOLINGO-STYLE TYPOGRAPHY HELPERS
+   ============================================================================= */
+
+.text-hero {
+  font-size: var(--text-4xl);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.text-title {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.text-subtitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.text-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.text-encouraging {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Interactive text that wiggles on hover */
+.text-wiggle:hover {
+  animation: wiggle 0.5s ease;
+  display: inline-block;
+}
+
+/* Playful emphasis */
+.text-pop {
+  display: inline-block;
+  transition: transform var(--transition-bounce);
+}
+
+.text-pop:hover {
+  transform: scale(1.05);
+}
+
+/* =============================================================================
+   DUOLINGO-STYLE EMPTY STATES
+   ============================================================================= */
+
+.empty-state-fun {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  text-align: center;
+}
+
+.empty-state-fun .empty-illustration {
+  font-size: 5rem;
+  margin-bottom: var(--space-xl);
+  animation: float 3s ease-in-out infinite;
+}
+
+.empty-state-fun h2 {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.empty-state-fun p {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin-bottom: var(--space-xl);
+}
+
+.empty-state-fun .cta-btn {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* =============================================================================
+   DUOLINGO-STYLE LOADING STATES
+   ============================================================================= */
+
+.loading-fun {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+  padding: var(--space-3xl);
+}
+
+.loading-mascot {
+  font-size: 4rem;
+  animation: jiggle 0.8s ease-in-out infinite;
+}
+
+.loading-dots {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.loading-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: bounce-dot 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(1); }
+  40% { transform: scale(1.5); }
+}
+
+.loading-text {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* Skeleton loading with shimmer */
+.skeleton {
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* =============================================================================
+   DUOLINGO-STYLE CARD EFFECTS
+   ============================================================================= */
+
+.card-playful {
+  background: var(--bg-surface);
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: 0 6px 0 var(--btn-shadow-secondary);
+  transition: all var(--transition-bounce);
+  position: relative;
+  top: 0;
+}
+
+.card-playful:hover {
+  top: -6px;
+  box-shadow: 0 12px 0 var(--btn-shadow-secondary);
+  border-color: var(--accent);
+}
+
+.card-playful:active {
+  top: 2px;
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+}
+
+/* Success celebration card */
+.card-success {
+  border-color: var(--success);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.card-success::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-lg);
+  background: var(--success);
+  opacity: 0;
+  z-index: -1;
+  animation: success-pulse 1s ease;
+}
+
+@keyframes success-pulse {
+  0% { opacity: 0.5; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* =============================================================================
+   MASCOT/CHARACTER AREA
+   ============================================================================= */
+
+.mascot-container {
+  position: relative;
+  display: inline-block;
+}
+
+.mascot {
+  font-size: 4rem;
+  transition: transform var(--transition-bounce);
+}
+
+.mascot:hover {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.mascot-speech {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+  animation: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mascot-speech::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: var(--bg-surface);
+}

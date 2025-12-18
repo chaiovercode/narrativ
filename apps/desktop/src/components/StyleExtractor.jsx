@@ -1,12 +1,38 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-export function StyleExtractor({ onStyleExtracted, disabled = false }) {
+export function StyleExtractor({ onStyleExtracted, disabled = false, providerStatus = null }) {
   const [isExtracting, setIsExtracting] = useState(false);
   const [preview, setPreview] = useState(null);
   const [styleName, setStyleName] = useState('');
   const [extractedStyle, setExtractedStyle] = useState(null);
   const [error, setError] = useState(null);
+  const [visionMessage, setVisionMessage] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Check vision provider availability
+  useEffect(() => {
+    if (providerStatus) {
+      const geminiOk = providerStatus.vision?.gemini?.available;
+      const ollamaOk = providerStatus.vision?.ollama?.available;
+
+      if (!geminiOk && !ollamaOk) {
+        const geminiMsg = providerStatus.vision?.gemini?.message;
+        const ollamaMsg = providerStatus.vision?.ollama?.message;
+
+        // Don't show warning if still checking
+        if (geminiMsg === 'Checking...' || ollamaMsg === 'Checking...') {
+          setVisionMessage(null);
+        } else {
+          const messages = [];
+          if (geminiMsg) messages.push(geminiMsg);
+          if (ollamaMsg) messages.push(ollamaMsg);
+          setVisionMessage(messages.length > 0 ? messages.join(' or ') : null);
+        }
+      } else {
+        setVisionMessage(null);
+      }
+    }
+  }, [providerStatus]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -33,7 +59,7 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
       formData.append('file', file);
       formData.append('name', styleName || 'Custom Style');
 
-      const response = await fetch('http://localhost:8000/extract_style', {
+      const response = await fetch('http://127.0.0.1:8000/extract_style', {
         method: 'POST',
         body: formData
       });
@@ -63,7 +89,7 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
     };
 
     try {
-      const response = await fetch('http://localhost:8000/styles', {
+      const response = await fetch('http://127.0.0.1:8000/styles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(styleToSave)
@@ -92,12 +118,14 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const isVisionDisabled = disabled || !!visionMessage;
+
   return (
-    <div className={`style-extractor ${disabled ? 'disabled' : ''}`}>
+    <div className={`style-extractor ${isVisionDisabled ? 'disabled' : ''}`}>
       {!preview ? (
         <div
-          className="style-extractor-upload"
-          onClick={() => !disabled && fileInputRef.current?.click()}
+          className={`style-extractor-upload ${visionMessage ? 'no-provider' : ''}`}
+          onClick={() => !isVisionDisabled && fileInputRef.current?.click()}
         >
           <input
             ref={fileInputRef}
@@ -105,16 +133,20 @@ export function StyleExtractor({ onStyleExtracted, disabled = false }) {
             accept="image/*"
             onChange={handleFileSelect}
             style={{ display: 'none' }}
-            disabled={disabled}
+            disabled={isVisionDisabled}
           />
           <div className="upload-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <div className="upload-content">
             <span className="upload-text">Upload reference</span>
-            <span className="upload-hint">Extract style with AI</span>
+            {visionMessage ? (
+              <span className="upload-hint provider-warning">{visionMessage}</span>
+            ) : (
+              <span className="upload-hint">Extract style with AI</span>
+            )}
           </div>
         </div>
       ) : (

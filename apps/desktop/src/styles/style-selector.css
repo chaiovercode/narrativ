@@ -482,3 +482,22 @@
   top: 4px;
   box-shadow: 0 0 0 var(--btn-shadow-primary);
 }
+
+/* Provider Warning Styles */
+.style-extractor-upload.no-provider {
+  border-color: var(--warning);
+  background: rgba(251, 191, 36, 0.05);
+  cursor: not-allowed;
+}
+
+.style-extractor-upload.no-provider:hover {
+  transform: none;
+  border-color: var(--warning);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.upload-hint.provider-warning {
+  color: var(--warning);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ConfirmModal } from './ConfirmModal';
+import '../styles/boards.css';
 
 export function BoardsView({
   activeTab,
@@ -57,26 +58,58 @@ export function BoardsView({
     return 'Are you sure?';
   };
 
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+
   return (
     <div className="boards-container">
-      {/* Tabs */}
-      {/* Tabs - only show if no board selected */}
+      {/* Header Controls: Tabs + View Toggle */}
       {!selectedBoard && !selectedResearchBoard && (
-        <div className="boards-tabs">
-          <button
-            className={`board-tab ${activeTab === 'research' ? 'active' : ''}`}
-            onClick={() => setActiveTab('research')}
-          >
-            Research
-            {savedResearch.length > 0 && <span className="tab-count">{savedResearch.length}</span>}
-          </button>
-          <button
-            className={`board-tab ${activeTab === 'images' ? 'active' : ''}`}
-            onClick={() => setActiveTab('images')}
-          >
-            Images
-            {savedImageBoards.length > 0 && <span className="tab-count">{savedImageBoards.length}</span>}
-          </button>
+        <div className="boards-header-controls">
+          <div className="boards-tabs">
+            <button
+              className={`board-tab ${activeTab === 'research' ? 'active' : ''}`}
+              onClick={() => setActiveTab('research')}
+            >
+              Research
+              {savedResearch.length > 0 && <span className="tab-count">{savedResearch.length}</span>}
+            </button>
+            <button
+              className={`board-tab ${activeTab === 'images' ? 'active' : ''}`}
+              onClick={() => setActiveTab('images')}
+            >
+              Images
+              {savedImageBoards.length > 0 && <span className="tab-count">{savedImageBoards.length}</span>}
+            </button>
+          </div>
+
+          <div className="view-toggle">
+            <button
+              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Grid View"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button
+              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List View"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -91,6 +124,7 @@ export function BoardsView({
           onDownloadAll={onDownloadAll}
           onDeleteRequest={(e, id) => handleDeleteRequest(e, 'image', id)}
           onDeleteSingleImage={(e, id, idx) => handleDeleteRequest(e, 'single-image', id, idx)}
+          viewMode={viewMode}
         />
       ) : (
         <ResearchBoardsContent
@@ -102,6 +136,7 @@ export function BoardsView({
           onDeleteRequest={(e, id) => handleDeleteRequest(e, 'research', id)}
           onAddMoreSlides={onAddMoreSlides}
           onUpdateResearch={onUpdateResearch}
+          viewMode={viewMode}
         />
       )}
 
@@ -123,7 +158,8 @@ function ImageBoardsContent({
   onDownloadImage,
   onDownloadAll,
   onDeleteRequest,
-  onDeleteSingleImage
+  onDeleteSingleImage,
+  viewMode
 }) {
   if (savedImageBoards.length === 0) {
     return (
@@ -146,6 +182,14 @@ function ImageBoardsContent({
           </button>
           <h2>{selectedBoard.topic}</h2>
           <div className="board-detail-actions">
+            {selectedBoard.provider && (
+              <span className="provider-badge-small">
+                via {selectedBoard.provider === 'gemini' ? 'Gemini' :
+                  selectedBoard.provider === 'ollama' ? 'Ollama' :
+                    selectedBoard.provider === 'fal' ? 'Fal.ai' :
+                      selectedBoard.provider === 'huggingface' ? 'Hugging Face' : selectedBoard.provider}
+              </span>
+            )}
             <span className="board-detail-count">{selectedBoard.images.length} images</span>
             <button className="download-all-btn" onClick={() => onDownloadAll(selectedBoard.images, selectedBoard.topic)}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -191,15 +235,70 @@ function ImageBoardsContent({
     );
   }
 
+
+  if (viewMode === 'list') {
+    return (
+      <div className="boards-list-container">
+        <div className="list-header-row">
+          <div className="col-topic">Topic</div>
+          <div className="col-count">Images</div>
+          <div className="col-provider">Provider</div>
+          <div className="col-date">Date</div>
+          <div className="col-actions"></div>
+        </div>
+        <div className="list-body">
+          {[...savedImageBoards].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((board) => (
+            <div key={board.id} className="list-row" onClick={() => setSelectedBoard(board)}>
+              <div className="cell-topic">
+                <h3>{board.topic}</h3>
+              </div>
+              <div className="cell-count">
+                {board.images.length}
+              </div>
+              <div className="cell-provider">
+                {board.provider && (
+                  <span className="provider-text-small">
+                    {board.provider === 'gemini' ? 'Gemini' :
+                      board.provider === 'ollama' ? 'Ollama' :
+                        board.provider === 'fal' ? 'Fal' :
+                          board.provider === 'huggingface' ? 'HF' : board.provider}
+                  </span>
+                )}
+              </div>
+              <div className="cell-date">
+                {board.createdAt ? new Date(board.createdAt).toLocaleDateString() : '-'}
+              </div>
+              <div className="cell-actions">
+                <button className="card-delete-btn-list" onClick={(e) => onDeleteRequest(e, board.id)}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="boards-grid">
-      {savedImageBoards.map((board) => (
+      {[...savedImageBoards].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((board) => (
         <div key={board.id} className="board-card" onClick={() => setSelectedBoard(board)}>
           <button className="card-delete-btn" onClick={(e) => onDeleteRequest(e, board.id)}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+          {board.provider && (
+            <span className="card-provider-tag">
+              {board.provider === 'gemini' ? 'Gemini' :
+                board.provider === 'ollama' ? 'Ollama' :
+                  board.provider === 'fal' ? 'Fal' :
+                    board.provider === 'huggingface' ? 'HF' : board.provider}
+            </span>
+          )}
           <div className="board-stack-preview">
             {board.images.slice(0, 3).map((img, idx) => (
               <img key={idx} src={img} alt="" className={`stack-img stack-${idx}`} />
@@ -207,12 +306,15 @@ function ImageBoardsContent({
           </div>
           <div className="board-info">
             <h3>{board.topic}</h3>
-            <p>{board.images.length} images</p>
+            <div className="board-meta">
+              <span>{board.images.length} images</span>
+            </div>
           </div>
         </div>
       ))}
     </div>
   );
+
 }
 
 function ResearchBoardsContent({
@@ -223,7 +325,8 @@ function ResearchBoardsContent({
   onReviewForRegenerate,
   onDeleteRequest,
   onAddMoreSlides,
-  onUpdateResearch
+  onUpdateResearch,
+  viewMode
 }) {
   const [additionalSlides, setAdditionalSlides] = useState(0);
   const [isAddingSlides, setIsAddingSlides] = useState(false);
@@ -352,6 +455,11 @@ function ResearchBoardsContent({
             Back
           </button>
           <h2>{displayResearch.topic}</h2>
+          {(displayResearch.provider || displayResearch.model) && (
+            <span className="provider-badge-small">
+              {displayResearch.model || (displayResearch.provider === 'ollama' ? 'Ollama' : 'Gemini')}
+            </span>
+          )}
           <div className="board-detail-actions">
             <button
               className="download-all-btn"
@@ -486,9 +594,57 @@ function ResearchBoardsContent({
     );
   }
 
+
+  if (viewMode === 'list') {
+    return (
+      <div className="boards-list-container">
+        <div className="list-header-row">
+          <div className="col-topic">Topic</div>
+          <div className="col-scenes">Scenes</div>
+          <div className="col-sources">Sources</div>
+          <div className="col-provider">Provider</div>
+          <div className="col-date">Date</div>
+          <div className="col-actions"></div>
+        </div>
+        <div className="list-body">
+          {[...savedResearch].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((research) => (
+            <div key={research.id} className="list-row" onClick={() => setSelectedResearchBoard(research)}>
+              <div className="cell-topic">
+                <h3>{research.topic}</h3>
+              </div>
+              <div className="cell-scenes">
+                {research.slides?.length}
+              </div>
+              <div className="cell-sources">
+                {research.sources?.length || 0}
+              </div>
+              <div className="cell-provider">
+                {(research.provider || research.model) && (
+                  <span className="provider-text-small">
+                    {research.model || (research.provider === 'ollama' ? 'Ollama' : 'Gemini')}
+                  </span>
+                )}
+              </div>
+              <div className="cell-date">
+                {research.createdAt ? new Date(research.createdAt).toLocaleDateString() : '-'}
+              </div>
+              <div className="cell-actions">
+                <button className="card-delete-btn-list" onClick={(e) => onDeleteRequest(e, research.id)}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="research-boards-grid">
-      {savedResearch.map((research) => (
+      {[...savedResearch].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((research) => (
         <div
           key={research.id}
           className="research-board-card"
@@ -503,7 +659,14 @@ function ResearchBoardsContent({
             <h3>{research.topic}</h3>
             <span className="slide-count">{research.slides?.length} scenes</span>
           </div>
-          <p className="research-style">{research.aesthetic?.art_style}</p>
+          <div className="research-meta-row">
+            <p className="research-style">{research.aesthetic?.art_style}</p>
+            {(research.provider || research.model) && (
+              <span className="provider-text-small">
+                via {research.model || (research.provider === 'ollama' ? 'Ollama' : 'Gemini')}
+              </span>
+            )}
+          </div>
           <div className="research-slides-preview">
             {research.slides?.slice(0, 3).map((slide, idx) => (
               <div key={idx} className="research-slide-preview">

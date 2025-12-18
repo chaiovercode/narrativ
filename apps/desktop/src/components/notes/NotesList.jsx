@@ -12,8 +12,10 @@ function NotesList({
   onSearch,
   onSelectNote,
   onDeleteNote,
+  onDuplicateNote,
   onCreateFolder,
   onDeleteFolder,
+  onDuplicateFolder,
   onRenameFolder,
   onMoveNote,
   onMoveFolder,
@@ -126,6 +128,27 @@ function NotesList({
   const cancelRename = useCallback(() => {
     setRenaming({ item: null, type: null, value: '' });
   }, []);
+
+  // Handle Duplicate
+  const handleDuplicate = useCallback(async (e, item, type) => {
+    e.stopPropagation();
+    console.log('[Duplicate] Clicked:', type, item);
+    try {
+      if (type === 'note' && onDuplicateNote) {
+        console.log('[Duplicate] Duplicating note:', item.id);
+        const result = await onDuplicateNote(item.id);
+        console.log('[Duplicate] Note duplicated:', result);
+      } else if (type === 'folder' && onDuplicateFolder) {
+        console.log('[Duplicate] Duplicating folder:', item.path);
+        const result = await onDuplicateFolder(item.path);
+        console.log('[Duplicate] Folder duplicated:', result);
+      } else {
+        console.log('[Duplicate] No handler available:', { onDuplicateNote: !!onDuplicateNote, onDuplicateFolder: !!onDuplicateFolder });
+      }
+    } catch (err) {
+      console.error('[Duplicate] Failed:', err);
+    }
+  }, [onDuplicateNote, onDuplicateFolder]);
 
   // Handle Drag and Drop
   const handleDragStart = useCallback((e, item, type) => {
@@ -322,6 +345,16 @@ function NotesList({
         <div className="tree-actions">
           <button
             className="tree-action"
+            onClick={(e) => handleDuplicate(e, note, 'note')}
+            title="Duplicate note"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+          </button>
+          <button
+            className="tree-action"
             onClick={(e) => startRenaming(e, note, 'note')}
             title="Rename note"
           >
@@ -342,7 +375,7 @@ function NotesList({
         </div>
       </div>
     );
-  }, [selectedNoteId, onSelectNote, handleDelete, startRenaming, renderLabelOrInput, handleDragStart, handleDragEnd]);
+  }, [selectedNoteId, onSelectNote, handleDelete, handleDuplicate, startRenaming, renderLabelOrInput, handleDragStart, handleDragEnd]);
 
   // Render a folder and its contents
   const renderFolder = useCallback((folder, depth = 0) => {
@@ -388,6 +421,16 @@ function NotesList({
           <div className="tree-actions">
             <button
               className="tree-action"
+              onClick={(e) => handleDuplicate(e, folder, 'folder')}
+              title="Duplicate folder"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            </button>
+            <button
+              className="tree-action"
               onClick={(e) => startRenaming(e, folder, 'folder')}
               title="Rename folder"
             >
@@ -429,7 +472,7 @@ function NotesList({
       </div>
     );
   }, [
-    expandedFolders, toggleFolder, handleDelete, startRenaming,
+    expandedFolders, toggleFolder, handleDelete, handleDuplicate, startRenaming,
     renderNote, renderLabelOrInput,
     handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop, dragOverFolder
   ]);

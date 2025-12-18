@@ -13,7 +13,7 @@ from typing import Optional, Tuple
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
 from config import OUTPUT_DIR
-from .clients import gemini_client, fal_client
+from .clients import gemini_client, fal_client, hf_api_key
 from .brand import get_brand_config, apply_watermark, get_brand_by_id
 
 
@@ -457,12 +457,14 @@ def generate_story_image(
     image_size: str = "story",
     provider: str = "gemini-flash",
     consistency_data: dict = None,
-    seed: int = None
+    seed: int = None,
+    hf_quality_mode: str = "free"
 ) -> Image.Image:
     """
     Generates a single story image using the specified provider.
-    Providers: gemini-flash, gemini-pro, fal
+    Providers: gemini-flash, gemini-pro, fal, huggingface
     image_size: 'story' (portrait) or 'square'
+    hf_quality_mode: 'quality' (premium models) or 'free' (free tier only)
     consistency_data: Optional dict with character/element descriptions for visual coherence
     seed: Optional seed for reproducible generation (fal.ai only)
     """
@@ -536,12 +538,40 @@ MUST AVOID:
 
 Generate this image now. English text only."""
 
+    # Try selected provider first, then fall back to others
+    result = None
+
+    # Build a simple prompt for HuggingFace (2000 char limit) - used for HF and fallbacks
+    hf_prompt = f"{art_style} artwork. {slide['visual_description']}. {aesthetic.get('color_palette', 'vibrant colors')}. {aesthetic.get('lighting', 'professional lighting')}. High quality, detailed."
+
     if provider == "fal":
-        return _generate_with_fal(prompt, image_size, seed=seed)
+        result = _generate_with_fal(prompt, image_size, seed=seed)
+        if result is None and gemini_client:
+            print("   [image] Fal.ai unavailable, falling back to Gemini")
+            result = _generate_with_gemini(prompt, image_size)
+        if result is None and hf_api_key:
+            print("   [image] Falling back to HuggingFace")
+            result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
+    elif provider == "huggingface":
+        result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
+        if result is None and gemini_client:
+            print("   [image] HuggingFace unavailable, falling back to Gemini")
+            result = _generate_with_gemini(prompt, image_size)
+
+        if result is None:
+            print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
-        return _generate_with_gemini(prompt, image_size, model="imagen-3.0-generate-002")
+        result = _generate_with_gemini(prompt, image_size, model="imagen-3.0-generate-002")
+        if result is None and hf_api_key:
+            print("   [image] Falling back to HuggingFace")
+            result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
     else:  # gemini-flash (default)
-        return _generate_with_gemini(prompt, image_size, model="imagen-3.0-fast-generate-001")
+        result = _generate_with_gemini(prompt, image_size, model="imagen-3.0-fast-generate-001")
+        if result is None and hf_api_key:
+            print("   [image] Falling back to HuggingFace")
+            result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
+
+    return result
 
 
 def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.Image:
@@ -636,6 +666,79 @@ def _generate_with_gemini(prompt: str, image_size: str, model: str = "imagen-3.0
         return None
 
 
+def _generate_with_huggingface(prompt: str, image_size: str, quality_mode: str = "free") -> Image.Image:
+    """Generate image using Hugging Face Inference API.
+
+    quality_mode: 'quality' uses premium models (may cost credits), 'free' uses only free tier
+    """
+    if not hf_api_key:
+        print("   [image] Hugging Face API key not set - add it in Settings > API Keys")
+        return None
+
+    print(f"   [image] Using HuggingFace with key: {hf_api_key[:8]}... (mode: {quality_mode})")
+
+    try:
+        from huggingface_hub import InferenceClient
+        client = InferenceClient(token=hf_api_key)
+
+        # Models based on quality mode
+        if quality_mode == "quality":
+            # Try premium models first, fall back to free
+            models = [
+                ("black-forest-labs/FLUX.1-dev", "FLUX.1-dev"),
+                ("stabilityai/stable-diffusion-xl-base-1.0", "SDXL"),
+                ("black-forest-labs/FLUX.1-schnell", "FLUX.1-schnell"),
+            ]
+        else:
+            # Free mode - only use free tier model
+            models = [
+                ("black-forest-labs/FLUX.1-schnell", "FLUX.1-schnell"),
+            ]
+
+        print(f"   [image] Prompt: {prompt[:80]}...")
+
+        for model_id, model_name in models:
+            try:
+                print(f"   [image] Trying {model_name}...")
+                image = client.text_to_image(
+                    prompt=prompt,
+                    model=model_id,
+                )
+
+                # Resize to target dimensions if needed
+                if image_size == "square":
+                    target_size = (1024, 1024)
+                else:
+                    # Story format 9:16
+                    target_size = (768, 1365)
+
+                if image.size != target_size:
+                    image = image.resize(target_size, Image.Resampling.LANCZOS)
+
+                print(f"   [image] Generated with HuggingFace {model_name} ({image.size[0]}x{image.size[1]})")
+                return image
+
+            except Exception as model_error:
+                error_str = str(model_error).lower()
+                # If it's a payment/access issue, try next model
+                if any(x in error_str for x in ['402', 'payment', 'requires', 'unauthorized', 'forbidden', 'pro']):
+                    print(f"   [image] {model_name} requires Pro subscription, trying next...")
+                    continue
+                # If it's a different error, still try next model but log it
+                print(f"   [image] {model_name} failed: {str(model_error)[:100]}")
+                continue
+
+        print("   [image] All HuggingFace models failed")
+        return None
+
+    except ImportError:
+        print("   [image] huggingface_hub not installed, install with: pip install huggingface_hub")
+        return None
+    except Exception as e:
+        print(f"   [image] Hugging Face generation failed: {e}")
+        return None
+
+
 def generate_story_from_plan(plan: dict, output_dir: str = None, provider: str = "gemini-flash", brand_id: str = None, text_overlay: bool = None) -> list:
     """
     Phase 2: Generate images from an approved plan.
@@ -654,7 +757,8 @@ def generate_story_from_plan(plan: dict, output_dir: str = None, provider: str =
     provider_names = {
         "gemini-flash": "Gemini Flash (Fast)",
         "gemini-pro": "Gemini Pro (Quality)",
-        "fal": "fal.ai Nano Banana Pro"
+        "fal": "fal.ai Nano Banana Pro",
+        "huggingface": "Hugging Face SDXL (Free)"
     }
 
     print(f"\n{'='*50}")
@@ -712,14 +816,14 @@ def _generate_single_slide_worker(args: tuple) -> Tuple[int, Optional[Image.Imag
     Returns (slide_number, image or None).
     Includes retry logic for rate limit errors.
     """
-    slide, topic, total_slides, aesthetic, image_size, provider, consistency_data, seed = args
+    slide, topic, total_slides, aesthetic, image_size, provider, consistency_data, seed, hf_quality_mode = args
     slide_num = slide['slide_number']
 
     for attempt in range(RETRY_MAX_ATTEMPTS):
         try:
             image = generate_story_image(
                 slide, topic, total_slides, aesthetic,
-                image_size, provider, consistency_data, seed
+                image_size, provider, consistency_data, seed, hf_quality_mode
             )
             return (slide_num, image)
         except Exception as e:
@@ -744,7 +848,8 @@ def generate_story_from_plan_parallel(
     brand_id: str = None,
     consistency_data: dict = None,
     max_workers: int = MAX_PARALLEL_WORKERS,
-    text_overlay: bool = None
+    text_overlay: bool = None,
+    hf_quality_mode: str = "free"
 ) -> list:
     """
     Phase 2: Generate images from an approved plan IN PARALLEL.
@@ -753,11 +858,12 @@ def generate_story_from_plan_parallel(
     Args:
         plan: Story plan with topic, aesthetic, slides
         output_dir: Directory to save images
-        provider: Image generation provider (gemini-flash, gemini-pro, fal)
+        provider: Image generation provider (gemini-flash, gemini-pro, fal, huggingface)
         brand_id: Optional brand ID for watermark
         consistency_data: Optional character/element descriptions for visual coherence
         max_workers: Maximum parallel generation threads (default 3)
         text_overlay: If True, add PIL text overlay. If None, use TEXT_OVERLAY_ENABLED setting.
+        hf_quality_mode: 'quality' (premium models) or 'free' (free tier only)
     """
     if output_dir is None:
         output_dir = OUTPUT_DIR
@@ -770,7 +876,8 @@ def generate_story_from_plan_parallel(
     provider_names = {
         "gemini-flash": "Gemini Flash (Fast)",
         "gemini-pro": "Gemini Pro (Quality)",
-        "fal": "fal.ai Nano Banana Pro"
+        "fal": "fal.ai Nano Banana Pro",
+        "huggingface": "Hugging Face SDXL (Free)"
     }
 
     print(f"\n{'='*50}")
@@ -799,7 +906,7 @@ def generate_story_from_plan_parallel(
 
     # Prepare task arguments for each slide
     task_args = [
-        (slide, topic, len(slides), aesthetic, image_size, provider, consistency_data, base_seed)
+        (slide, topic, len(slides), aesthetic, image_size, provider, consistency_data, base_seed, hf_quality_mode)
         for slide in slides
     ]
 

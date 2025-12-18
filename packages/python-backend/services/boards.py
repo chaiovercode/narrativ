@@ -12,24 +12,14 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
+from utils.vault import get_vault_path, set_vault_path
+from utils.text import slugify
+
+
 # Legacy data directory (used when no vault is set)
 DATA_DIR = Path(__file__).parent.parent / "data"
 RESEARCH_FILE = DATA_DIR / "research.json"
 IMAGES_FILE = DATA_DIR / "images.json"
-
-# Vault path (set dynamically by main.py)
-VAULT_PATH: Optional[str] = None
-
-
-def set_vault_path(path: Optional[str]):
-    """Set the vault path for storage."""
-    global VAULT_PATH
-    VAULT_PATH = path
-
-
-def get_vault_path() -> Optional[str]:
-    """Get the current vault path."""
-    return VAULT_PATH
 
 
 def ensure_data_dir():
@@ -44,23 +34,13 @@ def ensure_data_dir():
 
 
 def get_file_path(board_type: str) -> Path:
-    """Get the file path for a board type (legacy JSON storage)."""
+    """Get the file path for a board type."""
     if board_type == "research":
         return RESEARCH_FILE
     elif board_type == "images":
         return IMAGES_FILE
     else:
         raise ValueError(f"Invalid board type: {board_type}")
-
-
-def slugify(text: str) -> str:
-    """Convert text to a valid filename slug."""
-    # Remove special characters, keep alphanumeric and spaces
-    clean = re.sub(r'[^\w\s-]', '', text.lower())
-    # Replace spaces with hyphens
-    clean = re.sub(r'[-\s]+', '-', clean).strip('-')
-    # Limit length
-    return clean[:50] if clean else 'untitled'
 
 
 def board_to_markdown(board: Dict[str, Any]) -> str:
@@ -71,6 +51,8 @@ def board_to_markdown(board: Dict[str, Any]) -> str:
     style = board.get('selectedStyle', {}).get('name', 'Default') if isinstance(board.get('selectedStyle'), dict) else board.get('selectedStyle', 'Default')
     image_size = board.get('imageSize', 'story')
     created = board.get('createdAt', datetime.now().isoformat())
+    provider = board.get('provider', '')
+    model = board.get('model', '')
 
     # Build frontmatter
     frontmatter = f"""---
@@ -78,6 +60,8 @@ id: {board_id}
 topic: "{topic}"
 style: "{style}"
 image_size: "{image_size}"
+provider: "{provider}"
+model: "{model}"
 created: {created}
 ---
 """
@@ -159,6 +143,10 @@ def markdown_to_board(content: str, filename: str) -> Dict[str, Any]:
                         board['selectedStyle'] = value
                     elif key == 'image_size':
                         board['imageSize'] = value
+                    elif key == 'provider':
+                        board['provider'] = value
+                    elif key == 'model':
+                        board['model'] = value
                     elif key == 'created':
                         board['createdAt'] = value
         else:
@@ -227,8 +215,8 @@ def load_boards(board_type: str) -> List[Dict[str, Any]]:
     """Load all boards of a given type."""
 
     # For research boards with vault, use markdown files
-    if board_type == "research" and VAULT_PATH:
-        research_dir = Path(VAULT_PATH) / "research"
+    if board_type == "research" and get_vault_path():
+        research_dir = Path(get_vault_path()) / "research"
         if not research_dir.exists():
             return []
 
@@ -258,9 +246,11 @@ def load_boards(board_type: str) -> List[Dict[str, Any]]:
 
 
 def save_boards(board_type: str, boards: List[Dict[str, Any]]) -> None:
-    """Save all boards of a given type (legacy JSON only)."""
-    ensure_data_dir()
+    """Save all boards of a given type."""
     file_path = get_file_path(board_type)
+
+    # Ensure parent directory exists
+    file_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(file_path, "w") as f:
         json.dump(boards, f, indent=2)
@@ -270,8 +260,8 @@ def add_board(board_type: str, board: Dict[str, Any]) -> Dict[str, Any]:
     """Add a new board and return it. For research, skips if topic already exists."""
 
     # For research boards with vault, save as markdown
-    if board_type == "research" and VAULT_PATH:
-        research_dir = Path(VAULT_PATH) / "research"
+    if board_type == "research" and get_vault_path():
+        research_dir = Path(get_vault_path()) / "research"
         research_dir.mkdir(exist_ok=True)
 
         # Check if research with same topic already exists
@@ -326,8 +316,8 @@ def delete_board(board_type: str, board_id: int) -> bool:
     """Delete a board by ID. Returns True if deleted."""
 
     # For research boards with vault, delete markdown file
-    if board_type == "research" and VAULT_PATH:
-        research_dir = Path(VAULT_PATH) / "research"
+    if board_type == "research" and get_vault_path():
+        research_dir = Path(get_vault_path()) / "research"
         if not research_dir.exists():
             return False
 
@@ -348,7 +338,7 @@ def delete_board(board_type: str, board_id: int) -> bool:
         boards = load_boards(board_type)
         board_to_delete = next((b for b in boards if b.get("id") == board_id), None)
 
-        if board_to_delete and VAULT_PATH:
+        if board_to_delete and get_vault_path():
             # Get image URLs and extract folder name
             images = board_to_delete.get("images", [])
             if images:
@@ -362,7 +352,7 @@ def delete_board(board_type: str, board_id: int) -> bool:
                         idx = path_parts.index('images')
                         if idx + 1 < len(path_parts):
                             folder_name = path_parts[idx + 1]
-                            attachments_dir = Path(VAULT_PATH) / "attachments" / folder_name
+                            attachments_dir = Path(get_vault_path()) / "attachments" / folder_name
                             if attachments_dir.exists():
                                 shutil.rmtree(attachments_dir)
                                 print(f"[boards] Deleted attachments folder: {attachments_dir}")
@@ -397,8 +387,8 @@ def update_board(board_type: str, board_id: int, updated_data: Dict[str, Any]) -
     """Update an existing board by ID. Returns updated board or None if not found."""
 
     # For research boards with vault, update markdown file
-    if board_type == "research" and VAULT_PATH:
-        research_dir = Path(VAULT_PATH) / "research"
+    if board_type == "research" and get_vault_path():
+        research_dir = Path(get_vault_path()) / "research"
         if not research_dir.exists():
             return None
 
@@ -445,15 +435,20 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
     - Removes board entries for folders that no longer exist
     Returns stats about the sync operation.
     """
-    if not VAULT_PATH:
+    if not get_vault_path():
         return {"added": 0, "removed": 0, "updated": 0, "error": "No vault configured"}
 
-    attachments_dir = Path(VAULT_PATH) / "attachments"
+    attachments_dir = Path(get_vault_path()) / "attachments"
     if not attachments_dir.exists():
         return {"added": 0, "removed": 0, "updated": 0, "error": "Attachments directory doesn't exist"}
 
+    print(f"[DEBUG] Syncing vault: {get_vault_path()}")
+    print(f"[DEBUG] Attachments dir: {attachments_dir}")
+    print(f"[DEBUG] Attachments Content: {[x.name for x in attachments_dir.iterdir()]}")
+
     # Load current image boards
     boards = load_boards("images")
+    print(f"[DEBUG] Loaded {len(boards)} existing boards")
 
     # Build a map of folder_name -> board index for existing boards
     folder_to_board_idx = {}
@@ -488,7 +483,7 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
         images = []
         for ext in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
             for img_file in folder_path.glob(ext):
-                img_url = f"http://localhost:8000/images/{folder_path.name}/{img_file.name}"
+                img_url = f"http://127.0.0.1:8000/images/{folder_path.name}/{img_file.name}"
                 images.append(img_url)
         images.sort()
         return images
@@ -564,12 +559,16 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
     if added_count > 0 or removed_count > 0 or updated_count > 0:
         save_boards("images", boards_to_keep)
 
+    # Calculate total images across all boards
+    total_images_count = sum(len(b.get("images", [])) for b in boards_to_keep)
+
     return {
         "added": added_count,
         "removed": removed_count,
         "updated": updated_count,
         "total_boards": len(boards_to_keep),
-        "total_folders": len(actual_folders)
+        "total_folders": len(actual_folders),
+        "total_images": total_images_count
     }
 
 
@@ -578,10 +577,10 @@ def cleanup_orphaned_attachments() -> int:
     Remove attachment folders that don't have corresponding entries in the gallery.
     Returns the number of orphaned folders removed.
     """
-    if not VAULT_PATH:
+    if not get_vault_path():
         return 0
 
-    attachments_dir = Path(VAULT_PATH) / "attachments"
+    attachments_dir = Path(get_vault_path()) / "attachments"
     if not attachments_dir.exists():
         return 0
 

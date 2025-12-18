@@ -40,13 +40,29 @@ pyinstaller \
     --hidden-import=services \
     --hidden-import=services.research \
     --hidden-import=services.image_gen \
+    --hidden-import=services.image \
     --hidden-import=services.styles \
     --hidden-import=services.brand \
     --hidden-import=services.boards \
     --hidden-import=services.notes \
     --hidden-import=services.trending \
     --hidden-import=services.rss \
+    --hidden-import=services.clients \
+    --hidden-import=services.llm \
+    --hidden-import=services.consistency \
+    --hidden-import=services.aesthetic \
+    --hidden-import=services.caption \
+    --hidden-import=services.text_to_slides \
+    --hidden-import=utils \
+    --hidden-import=utils.vault \
+    --hidden-import=utils.text \
+    --hidden-import=utils.cache \
+    --hidden-import=utils.search \
+    --hidden-import=utils.json_utils \
+    --hidden-import=duckduckgo_search \
+    --hidden-import=huggingface_hub \
     --add-data "services:services" \
+    --add-data "utils:utils" \
     --add-data "config.py:." \
     --add-data "data:data" \
     --exclude-module tkinter \

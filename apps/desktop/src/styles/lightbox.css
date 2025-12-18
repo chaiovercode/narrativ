@@ -159,6 +159,39 @@
 .lightbox-prev { left: 40px; }
 .lightbox-next { right: 40px; }
 
+/* Lightbox Close Button - Top Right */
+.lightbox-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-overlay);
+  border: 2px solid var(--border-medium);
+  color: var(--text-primary);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+  z-index: 1001;
+  box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+}
+
+.lightbox-close-btn:hover {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+  box-shadow: 0 6px 0 var(--btn-shadow-danger);
+  transform: translateY(-2px);
+}
+
+.lightbox-close-btn:active {
+  box-shadow: 0 0 0 var(--btn-shadow-danger);
+  transform: translateY(4px);
+}
+
 /* =============================================================================
    CONFIRM MODAL
    ============================================================================= */

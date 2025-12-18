@@ -6,40 +6,27 @@ Supports vault-based storage like Obsidian themes.
 import os
 import json
 import base64
+import requests
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
-from config import BACKEND_DIR
-from .clients import gemini_client
+from config import BACKEND_DIR, OLLAMA_URL
+from .clients import gemini_client, has_ollama_vision_model
+from utils.vault import get_vault_path, set_vault_path
+from utils.text import slugify, generate_id
 
 # Legacy styles storage file (used when no vault is set)
 LEGACY_STYLES_FILE = os.path.join(BACKEND_DIR, "custom_styles.json")
 
-# Vault path (set dynamically by main.py)
-VAULT_PATH = None
-
-
-def set_vault_path(path):
-    """Set the vault path for styles storage."""
-    global VAULT_PATH
-    VAULT_PATH = path
-
 
 def get_styles_dir():
     """Get the styles directory path."""
-    if VAULT_PATH:
-        styles_dir = Path(VAULT_PATH) / "styles"
+    vault_path = get_vault_path()
+    if vault_path:
+        styles_dir = Path(vault_path) / "styles"
         styles_dir.mkdir(exist_ok=True)
         return styles_dir
     return None
-
-
-def slugify(text):
-    """Convert text to a valid filename slug."""
-    import re
-    clean = re.sub(r'[^\w\s-]', '', text.lower())
-    clean = re.sub(r'[-\s]+', '-', clean).strip('-')
-    return clean[:50] if clean else 'untitled'
 
 
 # Predefined styles with full JSON structure
@@ -103,6 +90,35 @@ def get_predefined_styles():
     return list(PREDEFINED_STYLES.values())
 
 
+def sync_predefined_styles_to_vault():
+    """
+    Export predefined styles to the vault's styles folder.
+    Only creates files that don't exist yet.
+    Returns the number of styles exported.
+    """
+    styles_dir = get_styles_dir()
+    if not styles_dir:
+        return 0
+
+    exported = 0
+    for style_id, style in PREDEFINED_STYLES.items():
+        filename = f"{style_id}.json"
+        file_path = styles_dir / filename
+
+        if not file_path.exists():
+            try:
+                style_copy = style.copy()
+                style_copy['is_predefined'] = True
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(style_copy, f, indent=2)
+                print(f"[styles] Exported predefined style to vault: {filename}")
+                exported += 1
+            except Exception as e:
+                print(f"[styles] Failed to export {filename}: {e}")
+
+    return exported
+
+
 def get_style_by_id(style_id):
     """Get a specific style by ID."""
     # Check predefined first
@@ -118,6 +134,34 @@ def get_style_by_id(style_id):
     return None
 
 
+def load_all_vault_styles():
+    """
+    Load all styles from vault (both predefined and custom).
+    Returns tuple of (predefined_styles, custom_styles).
+    """
+    styles_dir = get_styles_dir()
+
+    if not styles_dir or not styles_dir.exists():
+        return None, None
+
+    predefined = []
+    custom = []
+
+    for json_file in styles_dir.glob("*.json"):
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                style = json.load(f)
+                style['_filename'] = json_file.name
+                if style.get('is_predefined'):
+                    predefined.append(style)
+                else:
+                    custom.append(style)
+        except Exception as e:
+            print(f"[styles] Failed to load {json_file}: {e}")
+
+    return predefined if predefined else None, custom if custom else None
+
+
 def load_custom_styles():
     """Load custom styles from vault or legacy file."""
     styles_dir = get_styles_dir()
@@ -129,6 +173,9 @@ def load_custom_styles():
             try:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     style = json.load(f)
+                    # Skip predefined styles (they're returned separately)
+                    if style.get('is_predefined'):
+                        continue
                     style['_filename'] = json_file.name
                     styles.append(style)
             except Exception as e:
@@ -152,8 +199,7 @@ def save_custom_style(style):
 
     # Add ID if not present
     if 'id' not in style:
-        import time
-        style['id'] = f"custom_{int(time.time() * 1000)}"
+        style['id'] = generate_id('custom')
 
     # If vault is set, save as individual JSON file
     if styles_dir:
@@ -242,28 +288,7 @@ def delete_custom_style(style_id):
         return False
 
 
-def extract_style_from_image(image_data, name="Custom Style"):
-    """
-    Extract visual style from a reference image using Gemini Vision.
-    Returns a style object in the standard JSON format.
-    """
-    print(f"[styles] Extracting style from image...")
-
-    if not gemini_client:
-        raise ValueError("Gemini client not initialized")
-
-    # Convert image to base64
-    base64_image = base64.b64encode(image_data).decode('utf-8')
-
-    # Detect image type
-    try:
-        img = Image.open(BytesIO(image_data))
-        img_format = img.format.lower() if img.format else 'jpeg'
-        mime_type = f"image/{img_format}"
-    except:
-        mime_type = "image/jpeg"
-
-    prompt = """Analyze this image and extract its visual style for use in AI image generation.
+STYLE_EXTRACTION_PROMPT = """Analyze this image and extract its visual style for use in AI image generation.
 
 Provide a detailed JSON style definition with these exact fields:
 1. art_style: Overall artistic style (e.g., "cinematic photography", "watercolor illustration", "digital art")
@@ -285,33 +310,110 @@ Example output:
     "background_style": "deep out-of-focus dark tones with light leak accents"
 }"""
 
-    try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=[
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {
-                            "inline_data": {
-                                "mime_type": mime_type,
-                                "data": base64_image
-                            }
-                        }
-                    ]
-                }
-            ]
-        )
 
-        text = response.text.strip()
+def _extract_with_gemini(image_data, base64_image, mime_type):
+    """Extract style using Gemini Vision"""
+    response = gemini_client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=[
+            {
+                "parts": [
+                    {"text": STYLE_EXTRACTION_PROMPT},
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": base64_image
+                        }
+                    }
+                ]
+            }
+        ]
+    )
+    return response.text.strip()
+
+
+def _extract_with_ollama(image_data, base64_image, vision_model):
+    """Extract style using Ollama vision model (LLaVA, etc.)"""
+    response = requests.post(
+        f"{OLLAMA_URL}/api/generate",
+        json={
+            "model": vision_model,
+            "prompt": STYLE_EXTRACTION_PROMPT,
+            "images": [base64_image],
+            "stream": False
+        },
+        timeout=120
+    )
+
+    if response.status_code != 200:
+        raise Exception(f"Ollama error: {response.status_code}")
+
+    result = response.json()
+    return result.get("response", "").strip()
+
+
+def extract_style_from_image(image_data, name="Custom Style", provider="auto"):
+    """
+    Extract visual style from a reference image.
+
+    Args:
+        image_data: Raw image bytes
+        name: Name for the extracted style
+        provider: "gemini", "ollama", or "auto" (tries Gemini first, then Ollama)
+
+    Returns a style object in the standard JSON format.
+    """
+    print(f"[styles] Extracting style from image (provider: {provider})...")
+
+    # Convert image to base64
+    base64_image = base64.b64encode(image_data).decode('utf-8')
+
+    # Detect image type
+    try:
+        img = Image.open(BytesIO(image_data))
+        img_format = img.format.lower() if img.format else 'jpeg'
+        mime_type = f"image/{img_format}"
+    except:
+        mime_type = "image/jpeg"
+
+    # Check available providers
+    ollama_vision = has_ollama_vision_model()
+
+    # Determine which provider to use
+    use_gemini = False
+    use_ollama = False
+
+    if provider == "gemini":
+        if not gemini_client:
+            raise ValueError("Gemini not available. Add Google API key in Settings or use Ollama with a vision model (ollama pull llava:7b)")
+        use_gemini = True
+    elif provider == "ollama":
+        if not ollama_vision:
+            raise ValueError("No Ollama vision model available. Pull one with: ollama pull llava:7b")
+        use_ollama = True
+    else:  # auto
+        if gemini_client:
+            use_gemini = True
+        elif ollama_vision:
+            use_ollama = True
+        else:
+            raise ValueError("No vision provider available. Either add Google API key in Settings, or run Ollama with a vision model (ollama pull llava:7b)")
+
+    try:
+        if use_gemini:
+            print("[styles] Using Gemini Vision...")
+            text = _extract_with_gemini(image_data, base64_image, mime_type)
+        else:
+            print(f"[styles] Using Ollama vision ({ollama_vision})...")
+            text = _extract_with_ollama(image_data, base64_image, ollama_vision)
+
         # Clean up response
         text = text.replace("```json", "").replace("```", "").strip()
 
         style = json.loads(text)
 
         # Add metadata
-        import time
-        style['id'] = f"extracted_{int(time.time() * 1000)}"
+        style['id'] = generate_id('extracted')
         style['name'] = name
         style['is_custom'] = True
         style['is_extracted'] = True
@@ -322,9 +424,8 @@ Example output:
     except json.JSONDecodeError as e:
         print(f"[styles] Failed to parse style JSON: {e}")
         # Return a fallback style
-        import time
         return {
-            "id": f"extracted_{int(time.time() * 1000)}",
+            "id": generate_id('extracted'),
             "name": name,
             "is_custom": True,
             "is_extracted": True,

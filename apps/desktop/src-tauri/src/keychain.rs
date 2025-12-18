@@ -152,7 +152,7 @@ pub fn delete_api_key(key_name: &str) -> Result<(), String> {
 
 /// Get all stored API key names (for UI display)
 pub fn get_stored_key_names() -> Vec<&'static str> {
-    vec!["google_api_key", "tavily_api_key", "fal_api_key"]
+    vec!["google_api_key", "tavily_api_key", "fal_api_key", "hf_api_key"]
 }
 
 /// Check if an API key exists

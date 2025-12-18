@@ -11,7 +11,7 @@ import {
     ResearchPanel,
     Lightbox
 } from '../components';
-import { useLocalStorage, useStoryGeneration, useBoards } from '../hooks';
+import { useLocalStorage, useStoryGeneration, useBoards, useProviders } from '../hooks';
 
 function Create({ openResearchTopic, onResearchOpened }) {
     // Form state
@@ -21,6 +21,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
     const [customStyles, setCustomStyles] = useLocalStorage('story-generator-custom-styles', []);
     const [imageSize, setImageSize] = useState('story');
     const [imageProvider, setImageProvider] = useState('fal');
+    const [llmProvider, setLlmProvider] = useState('gemini');
     const [inputMode, setInputMode] = useState('topic');
     const [pastedText, setPastedText] = useState('');
 
@@ -30,6 +31,9 @@ function Create({ openResearchTopic, onResearchOpened }) {
 
     // Lightbox state
     const [selectedImage, setSelectedImage] = useState(null);
+
+    // Provider status (LLM, Vision, Image)
+    const { providers: providerStatus } = useProviders();
 
     // Boards state (persisted to backend)
     const {
@@ -74,7 +78,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
     useEffect(() => {
         const loadBrands = async () => {
             try {
-                const response = await fetch('http://localhost:8000/brands');
+                const response = await fetch('http://127.0.0.1:8000/brands');
                 if (response.ok) {
                     const data = await response.json();
                     setBrands(data.brands || []);
@@ -138,6 +142,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
         selectedStyle,
         imageSize,
         imageProvider,
+        llmProvider,
         inputMode,
         pastedText,
         brandId: selectedBrand,
@@ -324,6 +329,8 @@ function Create({ openResearchTopic, onResearchOpened }) {
             caption: storyPlan.caption,
             hashtags: storyPlan.hashtags,
             image_size: imageSize || storyPlan.image_size || 'story',
+            provider: storyPlan.provider || llmProvider,
+            model: storyPlan.model,
             createdAt: new Date().toISOString()
         };
 
@@ -337,7 +344,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
         if (!research || additionalCount <= 0) return;
 
         try {
-            const response = await fetch('http://localhost:8000/add_slides', {
+            const response = await fetch('http://127.0.0.1:8000/add_slides', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -360,7 +367,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
             };
 
             // Update in backend
-            await fetch(`http://localhost:8000/boards/research/${research.id}`, {
+            await fetch(`http://127.0.0.1:8000/boards/research/${research.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedResearch),
@@ -382,7 +389,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
 
         try {
             // Update in backend
-            await fetch(`http://localhost:8000/boards/research/${updatedResearch.id}`, {
+            await fetch(`http://127.0.0.1:8000/boards/research/${updatedResearch.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedResearch),
@@ -477,6 +484,8 @@ function Create({ openResearchTopic, onResearchOpened }) {
                 setImageSize={setImageSize}
                 imageProvider={imageProvider}
                 setImageProvider={setImageProvider}
+                llmProvider={llmProvider}
+                setLlmProvider={setLlmProvider}
                 inputMode={inputMode}
                 setInputMode={setInputMode}
                 pastedText={pastedText}
@@ -492,6 +501,7 @@ function Create({ openResearchTopic, onResearchOpened }) {
                 brands={brands}
                 selectedBrand={selectedBrand}
                 setSelectedBrand={setSelectedBrand}
+                providerStatus={providerStatus}
             />
 
             {!isGenerating && (

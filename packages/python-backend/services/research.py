@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.cache import get_cache_key, get_cached, set_cache
 from utils.search import search, deep_search
 from utils.json_utils import clean_json_response
-from .clients import gemini_client
+from .llm import generate_text
 
 
 # Topic category definitions for smarter query generation
@@ -197,11 +197,7 @@ No other text or explanation.
 </OUTPUT_FORMAT>"""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        extracted = response.text.strip()
+        extracted = generate_text(prompt)
         if extracted and len(extracted) > 50:
             print(f"   [research] AI extracted and deduplicated facts")
             return extracted
@@ -526,17 +522,14 @@ If ANY slide fails ANY check, rewrite it before outputting.
 LANGUAGE: English only. Generate exactly {num_slides} slides now."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         slides = json.loads(text)
         print(f"   [research] Created {len(slides)} slides ({category} category)")
         return {"slides": slides, "sources": sources, "category": category}
     except json.JSONDecodeError as e:
         print(f"   [research] JSON parse failed: {e}")
-        print(f"   [research] Raw response: {response.text[:500]}...")
+        print(f"   [research] Raw response: {response_text[:500]}...")
         return None
     except Exception as e:
         print(f"   [research] Failed: {e}")
@@ -703,11 +696,8 @@ Return ONLY valid JSON array with exactly {additional_count} slides:
 
     new_slides = []
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         generated_slides = json.loads(text)
 
         # Filter out any slides that are still semantically similar to existing ones

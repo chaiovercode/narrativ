@@ -135,21 +135,35 @@ pub fn get_app_data_dir() -> Result<String, String> {
 /// Get the Python backend path (relative to app resources)
 #[tauri::command]
 pub fn get_python_backend_path(app_handle: tauri::AppHandle) -> Result<String, String> {
-    // In development, use the packages/python-backend path
     // In production, use the bundled resources
-    let resource_path = app_handle
-        .path_resolver()
-        .resource_dir()
-        .ok_or_else(|| "Could not determine resource directory".to_string())?;
-
-    let backend_path = resource_path.join("python-backend");
-
-    if backend_path.exists() {
-        Ok(backend_path.to_string_lossy().to_string())
-    } else {
-        // Fallback for development - try to find it relative to the app
-        Err("Python backend not found. Please ensure it's properly bundled.".to_string())
+    if let Some(resource_path) = app_handle.path_resolver().resource_dir() {
+        let backend_path = resource_path.join("python-backend");
+        if backend_path.exists() {
+            return Ok(backend_path.to_string_lossy().to_string());
+        }
     }
+
+    // Fallback for development - try common dev paths
+    let dev_paths = vec![
+        // From src-tauri directory
+        std::path::PathBuf::from("../../packages/python-backend"),
+        // From project root
+        std::path::PathBuf::from("packages/python-backend"),
+        // Absolute path for dev (adjust if needed)
+        dirs::home_dir()
+            .map(|h| h.join("Code/narrativ/packages/python-backend"))
+            .unwrap_or_default(),
+    ];
+
+    for path in dev_paths {
+        if path.exists() {
+            if let Ok(canonical) = path.canonicalize() {
+                return Ok(canonical.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    Err("Python backend not found. Please ensure it's properly bundled.".to_string())
 }
 
 // ============================================================================

@@ -121,7 +121,7 @@ export function TrendingTopics({ onTopicSelect, disabled }) {
 
     try {
       const allCategories = [...selectedCategories, ...selectedCustomTopics];
-      const response = await fetch(`http://localhost:8000/trending_topics?categories=${allCategories.join(',')}`);
+      const response = await fetch(`http://127.0.0.1:8000/trending_topics?categories=${allCategories.join(',')}`);
       if (response.ok) {
         const data = await response.json();
         setSuggestedTopics(data.topics || []);

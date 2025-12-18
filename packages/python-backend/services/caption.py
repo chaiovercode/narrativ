@@ -4,7 +4,7 @@ Caption generation service - generates captions and hashtags.
 
 import json
 from utils.json_utils import clean_json_response
-from .clients import gemini_client
+from .llm import generate_text
 
 
 def generate_story_caption(topic: str, slides: list) -> dict:
@@ -91,11 +91,8 @@ Before outputting, verify:
 LANGUAGE: English only. Generate the caption now."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         result = json.loads(text)
         print(f"   [caption] Generated")
         return result

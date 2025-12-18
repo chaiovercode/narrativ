@@ -44,12 +44,16 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
       saveTimeoutRef.current = setTimeout(async () => {
         try {
           setSaving(true);
-          await onSave({
+          const saveData = {
             id: note?.id,
             title: newTitle,
             content: newContent,
-            filename: note?.filename,
-          });
+          };
+          // Only include file location fields if they exist (for existing notes)
+          if (note?.filename) saveData.filename = note.filename;
+          if (note?.folder) saveData.folder = note.folder;
+          if (note?.path || note?.folder) saveData.path = note.path || note.folder;
+          await onSave(saveData);
           setLastSaved(new Date());
         } catch (err) {
           console.error('Auto-save failed:', err);
@@ -276,7 +280,11 @@ function NoteEditor({ note, onSave, onDelete, onBack, researchBoards = [] }) {
   }, [content, mode, showLinkPicker, filteredResearch, insertResearchLink, toggleMode, insertFormatting]);
 
   // Double-click in view mode to edit
-  const handleViewDoubleClick = useCallback(() => {
+  const handleViewDoubleClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Clear any text selection that might have occurred
+    window.getSelection()?.removeAllRanges();
     setMode('edit');
     requestAnimationFrame(() => {
       textareaRef.current?.focus();

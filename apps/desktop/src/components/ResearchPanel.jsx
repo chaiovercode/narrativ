@@ -24,66 +24,71 @@ export function ResearchPanel({
         </svg>
       </button>
       <div className="research-panel-content">
-          <div className="research-panel-header">
-            <h3>Refine & Conjure</h3>
-            <span className="research-topic">{completedResearch.topic}</span>
-          </div>
+        <div className="research-panel-header">
+          <h3>Refine & Conjure</h3>
+          <span className="research-topic">{completedResearch.topic}</span>
+          {(completedResearch.provider || completedResearch.model) && (
+            <span className="provider-badge">
+              via {completedResearch.model || completedResearch.provider === 'ollama' ? 'Ollama' : 'Gemini'}
+            </span>
+          )}
+        </div>
 
-          <div className="research-panel-section">
-            <label>Visual Charm</label>
-            <p
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => setCompletedResearch({
-                ...completedResearch,
-                aesthetic: { ...completedResearch.aesthetic, art_style: e.target.innerText }
-              })}
-              className="editable-research-field"
-            >
-              {completedResearch.aesthetic?.art_style}
-            </p>
-          </div>
+        <div className="research-panel-section">
+          <label>Visual Charm</label>
+          <p
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => setCompletedResearch({
+              ...completedResearch,
+              aesthetic: { ...completedResearch.aesthetic, art_style: e.target.innerText }
+            })}
+            className="editable-research-field"
+          >
+            {completedResearch.aesthetic?.art_style}
+          </p>
+        </div>
 
-          <div className="research-panel-section">
-            <label>Scenes (click to edit)</label>
-            {completedResearch.slides?.map((slide, idx) => (
-              <div key={idx} className="research-slide-item editable">
-                <span className="slide-num">{slide.slide_number}</span>
-                <div>
-                  <strong
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => handleEditSlide('title', e.target.innerText, idx)}
-                  >
-                    {slide.title}
-                  </strong>
-                  <p
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => handleEditSlide('key_fact', e.target.innerText, idx)}
-                  >
-                    {slide.key_fact}
-                  </p>
-                </div>
+        <div className="research-panel-section">
+          <label>Scenes (click to edit)</label>
+          {completedResearch.slides?.map((slide, idx) => (
+            <div key={idx} className="research-slide-item editable">
+              <span className="slide-num">{slide.slide_number}</span>
+              <div>
+                <strong
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditSlide('title', e.target.innerText, idx)}
+                >
+                  {slide.title}
+                </strong>
+                <p
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditSlide('key_fact', e.target.innerText, idx)}
+                >
+                  {slide.key_fact}
+                </p>
               </div>
+            </div>
+          ))}
+        </div>
+
+        {completedResearch.sources?.length > 0 && (
+          <div className="research-panel-section">
+            <label>Sources</label>
+            {completedResearch.sources.slice(0, 5).map((src, idx) => (
+              <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" className="research-source-link">
+                {src.title}
+              </a>
             ))}
           </div>
+        )}
 
-          {completedResearch.sources?.length > 0 && (
-            <div className="research-panel-section">
-              <label>Sources</label>
-              {completedResearch.sources.slice(0, 5).map((src, idx) => (
-                <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" className="research-source-link">
-                  {src.title}
-                </a>
-              ))}
-            </div>
-          )}
-
-          <button className="regenerate-btn" onClick={() => onRegenerateImages()}>
-            Conjure Again
-          </button>
-        </div>
+        <button className="regenerate-btn" onClick={() => onRegenerateImages()}>
+          Conjure Again
+        </button>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 FAL_API_KEY = os.getenv("FAL_API_KEY")
+HF_API_KEY = os.getenv("HF_API_KEY")
 
 # Directories
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -27,7 +28,14 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_EXPIRY_HOURS = 24
 
 # Image providers
-IMAGE_PROVIDERS = ["gemini-flash", "gemini-pro", "fal"]
+IMAGE_PROVIDERS = ["gemini-flash", "gemini-pro", "fal", "huggingface"]
+
+# LLM providers
+LLM_PROVIDERS = ["gemini", "ollama"]
+
+# Ollama settings
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:latest")  # Default model, auto-detected if available
+OLLAMA_URL = "http://localhost:11434"
 
 # RSS Feed sources
 RSS_FEEDS = {

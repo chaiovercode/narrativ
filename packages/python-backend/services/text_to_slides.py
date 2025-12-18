@@ -3,7 +3,7 @@ Text-to-slides service - creates story slides from user-provided text.
 """
 
 import json
-from .clients import gemini_client
+from .llm import generate_text
 from .aesthetic import define_series_aesthetic
 from .caption import generate_story_caption
 
@@ -66,11 +66,8 @@ Example output format:
 ]"""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text_response = response.text.strip().replace("```json", "").replace("```", "")
+        response_text = generate_text(prompt)
+        text_response = response_text.strip().replace("```json", "").replace("```", "")
         slides = json.loads(text_response)
         print(f"   [text_to_slides] Created {len(slides)} slides from text")
     except Exception as e:

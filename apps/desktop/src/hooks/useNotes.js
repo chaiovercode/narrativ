@@ -9,6 +9,8 @@ import {
   deleteFolderApi,
   renameFolderApi,
   moveFolderApi,
+  duplicateNoteApi,
+  duplicateFolderApi,
 } from '../services/api';
 
 /**
@@ -76,15 +78,25 @@ export function useNotes() {
   // Update an existing note
   const updateNote = useCallback(async (id, updates) => {
     try {
-      const noteToUpdate = { id, ...updates };
+      // Get the existing note to preserve all fields
+      const existingNote = notes.find(n => n.id === id);
+      const noteToUpdate = { ...existingNote, ...updates, id };
       const saved = await saveNoteApi(noteToUpdate);
-      setNotes((prev) => prev.map((n) => (n.id === id ? saved : n)));
+      setNotes((prev) => {
+        const exists = prev.some(n => n.id === id);
+        if (exists) {
+          return prev.map((n) => (n.id === id ? saved : n));
+        } else {
+          // Note not in list yet (race condition), add it
+          return [saved, ...prev];
+        }
+      });
       return saved;
     } catch (err) {
       console.error('Failed to update note:', err);
       throw err;
     }
-  }, []);
+  }, [notes]);
 
   // Delete a note
   const removeNote = useCallback(async (id) => {
@@ -157,6 +169,34 @@ export function useNotes() {
       return updated;
     } catch (err) {
       console.error('Failed to move folder:', err);
+      throw err;
+    }
+  }, [loadAll]);
+
+  // Duplicate a note
+  const duplicateNote = useCallback(async (id) => {
+    console.log('[useNotes] duplicateNote called with id:', id);
+    try {
+      const duplicated = await duplicateNoteApi(id);
+      console.log('[useNotes] duplicateNote result:', duplicated);
+      setNotes((prev) => [duplicated, ...prev]);
+      return duplicated;
+    } catch (err) {
+      console.error('[useNotes] Failed to duplicate note:', err);
+      throw err;
+    }
+  }, []);
+
+  // Duplicate a folder (and all contents)
+  const duplicateFolder = useCallback(async (path) => {
+    console.log('[useNotes] duplicateFolder called with path:', path);
+    try {
+      const duplicated = await duplicateFolderApi(path);
+      console.log('[useNotes] duplicateFolder result:', duplicated);
+      await loadAll(); // Reload everything since new folder and notes created
+      return duplicated;
+    } catch (err) {
+      console.error('[useNotes] Failed to duplicate folder:', err);
       throw err;
     }
   }, [loadAll]);
@@ -236,10 +276,12 @@ export function useNotes() {
     updateNote,
     removeNote,
     moveNote,
+    duplicateNote,
     createFolder,
     removeFolder,
     renameFolder,
     moveFolder,
+    duplicateFolder,
     searchNotes,
     refreshNotes: loadAll,
     getTreeStructure,

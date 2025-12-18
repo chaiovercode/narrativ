@@ -6,7 +6,7 @@ import json
 from config import CATEGORY_QUERIES, CATEGORY_REGIONS
 from utils.search import search
 from utils.json_utils import clean_json_response
-from .clients import gemini_client
+from .llm import generate_text
 
 
 def _get_fallback_topics(category: str) -> list:
@@ -26,17 +26,6 @@ def _get_fallback_topics(category: str) -> list:
     }
     return fallbacks.get(category.lower(), ["Trending Topic 1", "Trending Topic 2", "Trending Topic 3", "Trending Topic 4"])
 
-
-def get_trending_topics(categories) -> list:
-    """
-    Fetches trending topics for one or more categories using web search.
-    Returns 4 topic suggestions based on latest news.
-    """
-    if isinstance(categories, str):
-        categories = [categories]
-
-    categories = [c.lower() for c in categories]
-    print(f"[trending] Fetching for: {', '.join(categories)}...")
 
 def _is_valid_result(result: dict) -> bool:
     """Filter out generic homepage/category titles and irrelevant topics."""
@@ -161,11 +150,8 @@ Requirements:
 Return as JSON array of strings only. No markdown."""
 
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        text = clean_json_response(response.text)
+        response_text = generate_text(prompt)
+        text = clean_json_response(response_text)
         topics = json.loads(text)
         print(f"   [trending] Found {len(topics)} topics")
         return topics[:4]

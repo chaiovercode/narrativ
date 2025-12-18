@@ -3,7 +3,19 @@
  * Handles research and image boards persistence.
  */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'http://127.0.0.1:8000';
+
+// =============================================================================
+// Health Check
+// =============================================================================
+
+export async function checkBackendHealth() {
+  const response = await fetch(`${API_BASE}/health`, {
+    signal: AbortSignal.timeout(500) // Quick timeout for health checks
+  });
+  if (!response.ok) throw new Error('Backend not ready');
+  return await response.json();
+}
 
 // =============================================================================
 // Research Boards
@@ -199,5 +211,35 @@ export async function moveFolderApi(path, newParent) {
   });
   if (!response.ok) throw new Error('Failed to move folder');
   const data = await response.json();
+  return data.folder;
+}
+
+export async function duplicateNoteApi(id) {
+  console.log('[API] Duplicating note:', id);
+  const response = await fetch(`${API_BASE}/notes/${id}/duplicate`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('[API] duplicateNote failed:', response.status, text);
+    throw new Error('Failed to duplicate note');
+  }
+  const data = await response.json();
+  console.log('[API] duplicateNote result:', data);
+  return data.note;
+}
+
+export async function duplicateFolderApi(path) {
+  console.log('[API] Duplicating folder:', path);
+  const response = await fetch(`${API_BASE}/folders/${encodeURIComponent(path)}/duplicate`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('[API] duplicateFolder failed:', response.status, text);
+    throw new Error('Failed to duplicate folder');
+  }
+  const data = await response.json();
+  console.log('[API] duplicateFolder result:', data);
   return data.folder;
 }

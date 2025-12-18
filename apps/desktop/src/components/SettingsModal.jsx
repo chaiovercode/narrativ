@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { open } from '@tauri-apps/api/dialog';
+import { open as openUrl } from '@tauri-apps/api/shell';
 import { readBinaryFile } from '@tauri-apps/api/fs';
 import { ConfirmModal } from './ConfirmModal';
 import '../styles/settings-modal.css';
@@ -28,8 +29,14 @@ const API_KEYS = [
   {
     id: 'fal_api_key',
     label: 'FAL API Key',
-    description: 'Optional - for additional image generation models',
+    description: 'Optional - for Fal.ai image generation',
     link: 'https://fal.ai'
+  },
+  {
+    id: 'hf_api_key',
+    label: 'Hugging Face API Key',
+    description: 'Optional - for free SDXL image generation',
+    link: 'https://huggingface.co/settings/tokens'
   },
 ];
 
@@ -48,6 +55,19 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
   const [keyVisibility, setKeyVisibility] = useState({});
   const [keyStatus, setKeyStatus] = useState({});
   const [saving, setSaving] = useState({});
+
+  // Ollama state
+  const [ollamaModels, setOllamaModels] = useState([]);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [ollamaAvailable, setOllamaAvailable] = useState(false);
+  const [selectedOllamaModel, setSelectedOllamaModel] = useState(
+    localStorage.getItem('narrativ_ollama_model') || ''
+  );
+
+  // HuggingFace quality mode state
+  const [hfQualityMode, setHfQualityMode] = useState(
+    localStorage.getItem('narrativ_hf_quality_mode') || 'free'
+  );
 
   // Vault state
   const [vaultPath, setVaultPath] = useState(null);
@@ -81,8 +101,38 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
       loadApiKeyStatus();
       loadBrands();
       loadVaultPath();
+      loadOllamaModels();
     }
   }, [isOpen]);
+
+  const loadOllamaModels = async () => {
+    try {
+      console.log('Checking Ollama status...');
+      const response = await fetch('http://127.0.0.1:8000/ollama_models');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Ollama status:', data);
+        setOllamaAvailable(data.available);
+        setOllamaModels(data.models || []);
+      }
+    } catch (err) {
+      console.log('Failed to load Ollama models:', err);
+      // Don't auto-set to false if we just failed to fetch, keep previous state or retry?
+      // Actually, if fetch fails, backend is down or ollama is down.
+      setOllamaAvailable(false);
+      setOllamaModels([]);
+    }
+  };
+
+  const handleOllamaModelChange = (model) => {
+    setSelectedOllamaModel(model);
+    localStorage.setItem('narrativ_ollama_model', model);
+  };
+
+  const handleHfQualityModeChange = (mode) => {
+    setHfQualityMode(mode);
+    localStorage.setItem('narrativ_hf_quality_mode', mode);
+  };
 
   const loadVaultPath = async () => {
     try {
@@ -107,7 +157,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     setSyncing(true);
     setSyncResult(null);
     try {
-      const response = await fetch('http://localhost:8000/vault/sync', {
+      const response = await fetch('http://127.0.0.1:8000/vault/sync', {
         method: 'POST',
       });
       if (response.ok) {
@@ -139,7 +189,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
 
   const loadBrands = async () => {
     try {
-      const response = await fetch('http://localhost:8000/brands');
+      const response = await fetch('http://127.0.0.1:8000/brands');
       if (response.ok) {
         const data = await response.json();
         setBrands(data.brands || []);
@@ -158,6 +208,47 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     setKeyVisibility(prev => ({ ...prev, [keyId]: !prev[keyId] }));
   };
 
+  // Helper to reload backend clients after API key changes
+  const reloadBackendClients = async () => {
+    try {
+      console.log('Reloading backend clients...');
+
+      // Read all API keys from keychain
+      const [googleKey, fapiKey, hfKey, tavilyKey] = await Promise.all([
+        invoke('get_api_key', { service: 'google_api_key' }).catch(() => null),
+        invoke('get_api_key', { service: 'fal_api_key' }).catch(() => null),
+        invoke('get_api_key', { service: 'hf_api_key' }).catch(() => null),
+        invoke('get_api_key', { service: 'tavily_api_key' }).catch(() => null),
+      ]);
+
+      console.log('Keys status - Google:', !!googleKey, 'Fal:', !!fapiKey, 'HF:', !!hfKey, 'Tavily:', !!tavilyKey);
+
+      // Send keys to backend to reload clients
+      const response = await fetch('http://127.0.0.1:8000/reload_clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          google_api_key: googleKey || '',
+          fal_api_key: fapiKey || '',
+          hf_api_key: hfKey || '',
+          tavily_api_key: tavilyKey || '',
+        }),
+        signal: AbortSignal.timeout(5000)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Backend clients reloaded:', result);
+        return true;
+      }
+      console.warn('Failed to reload clients:', response.status);
+      return false;
+    } catch (err) {
+      console.error('Error reloading clients:', err);
+      return false;
+    }
+  };
+
   const saveApiKey = async (keyId) => {
     const value = apiKeys[keyId];
     if (!value || !value.trim()) return;
@@ -168,16 +259,13 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
       setKeyStatus(prev => ({ ...prev, [keyId]: true }));
       setApiKeys(prev => ({ ...prev, [keyId]: '' }));
 
-      // Restart backend to apply new key
-      try {
-        console.log('Restarting backend to apply new API key...');
-        await invoke('restart_backend', { pythonBackendPath: '' });
-        console.log('Backend restarted successfully');
-      } catch (restartErr) {
-        console.error('Backend restart failed:', restartErr);
-        // Show a message that user may need to restart the app
-        alert('API key saved! You may need to restart the app for changes to take effect.');
-      }
+      // Reload backend clients to apply new key
+      console.log('Reloading backend clients to apply new API key...');
+      await reloadBackendClients();
+
+      // Notify providers to refresh
+      window.dispatchEvent(new CustomEvent('api-keys-changed'));
+      console.log('API keys changed event dispatched');
     } catch (err) {
       console.error('Failed to save API key:', err);
       alert(`Failed to save API key: ${err}`);
@@ -199,6 +287,14 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     try {
       await invoke('delete_api_key', { service: keyId });
       setKeyStatus(prev => ({ ...prev, [keyId]: false }));
+
+      // Reload backend clients to apply the change
+      console.log('Reloading backend clients after deleting API key...');
+      await reloadBackendClients();
+
+      // Notify providers to refresh
+      window.dispatchEvent(new CustomEvent('api-keys-changed'));
+      console.log('API keys changed event dispatched');
     } catch (err) {
       console.error('Failed to delete API key:', err);
       alert(`Failed to delete API key: ${err}`);
@@ -270,7 +366,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
         brandData.logoPath = editingBrand.logoPath;
       }
 
-      const response = await fetch('http://localhost:8000/brands', {
+      const response = await fetch('http://127.0.0.1:8000/brands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(brandData),
@@ -317,7 +413,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
 
   const confirmDeleteBrand = async (brandId) => {
     try {
-      const response = await fetch(`http://localhost:8000/brands/${brandId}`, {
+      const response = await fetch(`http://127.0.0.1:8000/brands/${brandId}`, {
         method: 'DELETE',
       });
 
@@ -354,10 +450,102 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
           <div className="settings-tab-content">
             <h2>General</h2>
             <div className="settings-group">
-              <div className="setting-item">
+              <div className="setting-item version-item">
                 <div className="setting-info">
                   <span className="setting-label">Version</span>
                   <span className="setting-description">Narrativ v1.0.0</span>
+                </div>
+              </div>
+
+              {/* Ollama Model Selection */}
+              <div className="setting-item">
+                <div className="setting-info">
+                  <div className="setting-header">
+                    <span className="setting-label">Ollama Model</span>
+                    {ollamaAvailable ? (
+                      <span className="status-badge configured">Running</span>
+                    ) : (
+                      <span className="status-badge">Not Running</span>
+                    )}
+                  </div>
+                  <span className="setting-description">
+                    Select which Ollama model to use for local AI research
+                  </span>
+                </div>
+                {ollamaAvailable && ollamaModels.length > 0 ? (
+                  <div className="custom-select-container">
+                    <div
+                      className={`custom-select-trigger ${isModelDropdownOpen ? 'open' : ''}`}
+                      onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                    >
+                      <span>{selectedOllamaModel || 'Auto-detect (recommended)'}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    {isModelDropdownOpen && (
+                      <div className="custom-select-options">
+                        <div
+                          className={`custom-select-option ${selectedOllamaModel === '' ? 'selected' : ''}`}
+                          onClick={() => {
+                            handleOllamaModelChange('');
+                            setIsModelDropdownOpen(false);
+                          }}
+                        >
+                          Auto-detect (recommended)
+                        </div>
+                        {ollamaModels.map(model => (
+                          <div
+                            key={model}
+                            className={`custom-select-option ${selectedOllamaModel === model ? 'selected' : ''}`}
+                            onClick={() => {
+                              handleOllamaModelChange(model);
+                              setIsModelDropdownOpen(false);
+                            }}
+                          >
+                            {model}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="setting-hint">
+                    {ollamaAvailable
+                      ? 'No models installed. Run: ollama pull qwen2.5'
+                      : 'Start Ollama to see available models'}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="get-key-link"
+                  onClick={() => openUrl('https://ollama.com/library')}
+                >
+                  Browse Ollama models
+                </button>
+              </div>
+
+              {/* HuggingFace Quality Mode */}
+              <div className="setting-item">
+                <div className="setting-info">
+                  <span className="setting-label">HuggingFace Mode</span>
+                  <span className="setting-description">
+                    Quality mode uses premium models (may cost credits). Free mode uses only free tier.
+                  </span>
+                </div>
+                <div className="type-buttons">
+                  <button
+                    className={`type-btn ${hfQualityMode === 'free' ? 'active' : ''}`}
+                    onClick={() => handleHfQualityModeChange('free')}
+                  >
+                    Free
+                  </button>
+                  <button
+                    className={`type-btn ${hfQualityMode === 'quality' ? 'active' : ''}`}
+                    onClick={() => handleHfQualityModeChange('quality')}
+                  >
+                    Quality
+                  </button>
                 </div>
               </div>
             </div>
@@ -412,9 +600,13 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                       </button>
                     )}
                   </div>
-                  <a href={key.link} target="_blank" rel="noopener noreferrer" className="get-key-link">
+                  <button
+                    type="button"
+                    className="get-key-link"
+                    onClick={() => openUrl(key.link)}
+                  >
                     Get API key
-                  </a>
+                  </button>
                 </div>
               ))}
             </div>
@@ -462,7 +654,7 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                       <span>Sync complete!</span>
                       {syncResult.attachments && (
                         <ul>
-                          <li>Images: {syncResult.attachments.added} added, {syncResult.attachments.updated || 0} updated, {syncResult.attachments.removed} removed</li>
+                          <li>Images: {syncResult.attachments.total_images || 0} files ({syncResult.attachments.added} new folders)</li>
                           <li>Research: {syncResult.research?.count || 0} files</li>
                           <li>Notes: {syncResult.notes?.count || 0} files</li>
                           <li>Styles: {syncResult.styles?.count || 0} files</li>

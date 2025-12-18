@@ -41,17 +41,17 @@ impl BackendManager {
         }
 
         // Development: look in src-tauri/resources
-        let dev_paths = vec![
-            PathBuf::from("resources/narrativ-backend"),
-            PathBuf::from("src-tauri/resources/narrativ-backend"),
-            PathBuf::from("../resources/narrativ-backend"),
-        ];
+        // let dev_paths = vec![
+        //     PathBuf::from("resources/narrativ-backend"),
+        //     PathBuf::from("src-tauri/resources/narrativ-backend"),
+        //     PathBuf::from("../resources/narrativ-backend"),
+        // ];
 
-        for path in dev_paths {
-            if path.exists() {
-                return Some(path);
-            }
-        }
+        // for path in dev_paths {
+        //     if path.exists() {
+        //         return Some(path);
+        //     }
+        // }
 
         None
     }
@@ -73,12 +73,15 @@ impl BackendManager {
             .unwrap_or_default();
         let fal_key = keychain::retrieve_api_key("fal_api_key")?
             .unwrap_or_default();
+        let hf_key = keychain::retrieve_api_key("hf_api_key")?
+            .unwrap_or_default();
 
         // Debug: log key status (not the actual keys)
-        println!("API Keys status - Google: {}, Tavily: {}, Fal: {}",
+        println!("API Keys status - Google: {}, Tavily: {}, Fal: {}, HF: {}",
             if google_key.is_empty() { "MISSING" } else { "SET" },
             if tavily_key.is_empty() { "MISSING" } else { "SET" },
-            if fal_key.is_empty() { "MISSING" } else { "SET" });
+            if fal_key.is_empty() { "MISSING" } else { "SET" },
+            if hf_key.is_empty() { "MISSING" } else { "SET" });
 
         // Try bundled executable first, then fall back to Python for development
         let child = if let Some(bundled_path) = Self::find_bundled_backend() {
@@ -88,6 +91,7 @@ impl BackendManager {
                 .env("GOOGLE_API_KEY", &google_key)
                 .env("TAVILY_API_KEY", &tavily_key)
                 .env("FAL_API_KEY", &fal_key)
+                .env("HF_API_KEY", &hf_key)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
                 .spawn()
@@ -102,8 +106,9 @@ impl BackendManager {
                 .env("GOOGLE_API_KEY", &google_key)
                 .env("TAVILY_API_KEY", &tavily_key)
                 .env("FAL_API_KEY", &fal_key)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
+                .env("HF_API_KEY", &hf_key)
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
                 .spawn()
                 .map_err(|e| format!("Failed to start Python backend: {}", e))?
         };

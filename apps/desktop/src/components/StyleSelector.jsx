@@ -57,7 +57,7 @@ export function StyleSelector({
   const fetchStyles = async () => {
     try {
       console.log('[StyleSelector] Fetching styles...');
-      const response = await fetch('http://localhost:8000/styles');
+      const response = await fetch('http://127.0.0.1:8000/styles');
       if (response.ok) {
         const data = await response.json();
         console.log('[StyleSelector] Got styles:', {
@@ -100,7 +100,7 @@ export function StyleSelector({
   const handleDeleteCustomStyle = async (e, styleId) => {
     e.stopPropagation();
     try {
-      const response = await fetch(`http://localhost:8000/styles/${styleId}`, {
+      const response = await fetch(`http://127.0.0.1:8000/styles/${styleId}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -227,7 +227,7 @@ function StyleMenuItem({ style, isSelected, isCustom, onClick, onDelete }) {
           title="Delete style"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
       )}

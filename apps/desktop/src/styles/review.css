@@ -13,6 +13,8 @@
   width: 100%;
   margin: 0 auto;
   padding: var(--space-2xl);
+  padding-left: 10px;
+  padding-right: 10px;
   animation: fadeIn 0.5s ease;
 }
 
@@ -34,35 +36,50 @@
   font-size: var(--text-lg);
 }
 
-.review-header .back-btn {
-  position: absolute;
-  left: 0;
-  top: 20px;
+.review-container .board-detail-header {
+  margin-top: 0;
+}
+
+.review-container .back-btn {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   background: var(--bg-overlay);
   border: 2px solid var(--border-medium);
   color: var(--text-secondary);
-  padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-full);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.1s ease;
   font-size: var(--text-sm);
   font-weight: 700;
   box-shadow: 0 4px 0 var(--btn-shadow-secondary);
+  min-width: 80px;
+  justify-content: center;
+  position: relative;
+  top: 0;
 }
 
-.review-header .back-btn:hover {
+/* Make Save Research and Next buttons same size as Back */
+.review-container .board-detail-actions .btn-secondary,
+.review-container .board-detail-actions .btn-primary {
+  padding: 0.5rem 1rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.review-container .back-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-muted);
-  top: 18px;
+  top: -2px;
   box-shadow: 0 6px 0 var(--btn-shadow-secondary);
 }
 
-.review-header .back-btn:active {
-  top: 24px;
+.review-container .back-btn:active {
+  top: 4px;
   box-shadow: 0 0 0 var(--btn-shadow-secondary);
 }
 

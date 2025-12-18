@@ -798,3 +798,59 @@ body {
   border: 8px solid transparent;
   border-top-color: var(--bg-surface);
 }
+
+/* =============================================================================
+   PROVIDER BADGES (Created by Antigravity)
+   ============================================================================= */
+
+.provider-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg-overlay);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border-medium);
+  margin-left: 12px;
+}
+
+.provider-badge-small {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--bg-overlay);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border: 1px solid var(--border-medium);
+  white-space: nowrap;
+}
+
+.board-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.provider-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.research-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.provider-text-small {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}

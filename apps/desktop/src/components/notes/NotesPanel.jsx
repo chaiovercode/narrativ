@@ -16,8 +16,10 @@ function NotesPanel({
   onSelectNote,
   onNewNote,
   onDeleteNote,
+  onDuplicateNote,
   onCreateFolder,
   onDeleteFolder,
+  onDuplicateFolder,
   onRenameFolder,
   onMoveNote,
   onMoveFolder,
@@ -102,8 +104,10 @@ function NotesPanel({
           onSearch={setSearchQuery}
           onSelectNote={handleSelectNote}
           onDeleteNote={onDeleteNote}
+          onDuplicateNote={onDuplicateNote}
           onCreateFolder={onCreateFolder}
           onDeleteFolder={onDeleteFolder}
+          onDuplicateFolder={onDuplicateFolder}
           onRenameFolder={onRenameFolder}
           onMoveNote={onMoveNote}
           onMoveFolder={onMoveFolder}

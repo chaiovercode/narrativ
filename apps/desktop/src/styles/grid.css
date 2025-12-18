@@ -129,10 +129,30 @@
 .pinterest-grid {
   columns: 4 250px;
   column-gap: var(--space-xl);
-  margin-bottom: var(--space-3xl);
+  margin-bottom: 0;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding-bottom: var(--space-xl);
+  padding: var(--space-md);
+  padding-bottom: var(--space-3xl);
+}
+
+.pinterest-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pinterest-grid::-webkit-scrollbar-track {
+  background: var(--bg-overlay);
+  border-radius: 4px;
+}
+
+.pinterest-grid::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+
+.pinterest-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .grid-item {
