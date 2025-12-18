@@ -1,6 +1,6 @@
 [package]
 name = "narrativ"
-version = "1.0.3"
+version = "1.0.4"
 description = "AI-powered social media story creator"
 authors = ["chaiovercode"]
 license = "MIT"

@@ -495,7 +495,9 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
 
         if images:
             # Create a new board
-            topic = folder_name.replace("-", " ").replace("_", " ").title()
+            # Strip timestamp suffix (e.g., _20251219_025633) from folder name
+            clean_name = re.sub(r'_\d{8}_\d{6}$', '', folder_name)
+            topic = clean_name.replace("-", " ").replace("_", " ").title()
             new_board = {
                 "id": int(datetime.now().timestamp() * 1000) + added_count,
                 "topic": topic,
