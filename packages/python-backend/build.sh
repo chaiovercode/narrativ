@@ -15,10 +15,12 @@ rm -rf build dist
 pip3 install -r requirements.txt --quiet
 pip3 install pyinstaller --quiet
 
-# Build single executable
+# Build single executable with UPX compression
 pyinstaller \
     --onefile \
     --name narrativ-backend \
+    --strip \
+    --noupx \
     --hidden-import=uvicorn.logging \
     --hidden-import=uvicorn.loops \
     --hidden-import=uvicorn.loops.auto \
@@ -69,9 +71,57 @@ pyinstaller \
     --exclude-module matplotlib \
     --exclude-module scipy \
     --exclude-module pandas \
+    --exclude-module numpy.testing \
+    --exclude-module numpy.distutils \
+    --exclude-module numpy.f2py \
+    --exclude-module PIL.ImageQt \
+    --exclude-module PIL.ImageTk \
+    --exclude-module unittest \
+    --exclude-module pytest \
+    --exclude-module setuptools \
+    --exclude-module pip \
+    --exclude-module wheel \
+    --exclude-module pkg_resources \
+    --exclude-module distutils \
+    --exclude-module lib2to3 \
+    --exclude-module email.test \
+    --exclude-module test \
+    --exclude-module xmlrpc \
+    --exclude-module pydoc \
+    --exclude-module doctest \
+    --exclude-module torch \
+    --exclude-module torchvision \
+    --exclude-module torchaudio \
+    --exclude-module pyarrow \
+    --exclude-module zmq \
+    --exclude-module IPython \
+    --exclude-module jupyter \
+    --exclude-module notebook \
+    --exclude-module jedi \
+    --exclude-module parso \
+    --exclude-module sympy \
+    --exclude-module nltk \
+    --exclude-module networkx \
+    --exclude-module pygments \
+    --exclude-module lxml \
+    --exclude-module numpy \
+    --exclude-module cv2 \
+    --exclude-module sklearn \
+    --exclude-module transformers \
+    --exclude-module tensorflow \
+    --exclude-module keras \
+    --exclude-module boto3 \
+    --exclude-module botocore \
+    --exclude-module awscli \
+    --exclude-module azure \
+    --exclude-module google.cloud \
     --noconfirm \
     --clean \
     main.py
+
+echo ""
+echo "=== Compressing with UPX ==="
+upx --best --lzma dist/narrativ-backend || echo "UPX compression skipped (may not work on arm64)"
 
 echo ""
 echo "=== Build Complete ==="
