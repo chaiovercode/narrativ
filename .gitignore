@@ -56,3 +56,4 @@ yarn-error.log*
 # Misc
 *.local
 .turbo/
+packages/python-backend/data/images.json
