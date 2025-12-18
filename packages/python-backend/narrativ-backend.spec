@@ -10,7 +10,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'matplotlib', 'scipy', 'pandas', 'numpy.testing', 'numpy.distutils', 'numpy.f2py', 'PIL.ImageQt', 'PIL.ImageTk', 'unittest', 'pytest', 'setuptools', 'pip', 'wheel', 'pkg_resources', 'distutils', 'lib2to3', 'email.test', 'test', 'xmlrpc', 'pydoc', 'doctest', 'torch', 'torchvision', 'torchaudio', 'pyarrow', 'zmq', 'IPython', 'jupyter', 'notebook', 'jedi', 'parso', 'sympy', 'nltk', 'networkx', 'pygments', 'lxml', 'numpy', 'cv2', 'sklearn', 'transformers', 'tensorflow', 'keras', 'boto3', 'botocore', 'awscli', 'azure', 'google.cloud'],
+    excludes=['tkinter', 'matplotlib', 'scipy', 'pandas', 'numpy.testing', 'numpy.distutils', 'numpy.f2py', 'PIL.ImageQt', 'PIL.ImageTk', 'unittest', 'pytest', 'setuptools', 'pip', 'wheel', 'pkg_resources', 'distutils', 'lib2to3', 'email.test', 'test', 'xmlrpc', 'pydoc', 'doctest', 'torch', 'torchvision', 'torchaudio', 'pyarrow', 'zmq', 'IPython', 'jupyter', 'notebook', 'jedi', 'parso', 'sympy', 'nltk', 'networkx', 'pygments', 'lxml', 'cv2', 'sklearn', 'transformers', 'tensorflow', 'keras', 'boto3', 'botocore', 'awscli', 'azure', 'google.cloud'],
     noarchive=False,
     optimize=0,
 )

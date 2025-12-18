@@ -104,7 +104,6 @@ pyinstaller \
     --exclude-module networkx \
     --exclude-module pygments \
     --exclude-module lxml \
-    --exclude-module numpy \
     --exclude-module cv2 \
     --exclude-module sklearn \
     --exclude-module transformers \
