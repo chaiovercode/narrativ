@@ -561,12 +561,12 @@ Generate this image now. English text only."""
         if result is None:
             print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
-        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image")
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
     else:  # gemini-flash (default)
-        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image")
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
@@ -628,7 +628,7 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
         return None
 
 
-def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-3-pro-image-preview") -> Image.Image:
+def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-3-pro-image") -> Image.Image:
     """Generate image using Google Gemini 3 image model."""
     if not gemini_client:
         print("   [image] Gemini client not initialized")
