@@ -562,11 +562,17 @@ Generate this image now. English text only."""
             print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
         result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")  # Nano Banana Pro
+        if result is None and fal_client:
+            print("   [image] Gemini Pro unavailable, falling back to Fal.ai")
+            result = _generate_with_fal(prompt, image_size, seed=seed)
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
     else:  # gemini-flash (default)
         result = _generate_with_gemini(prompt, image_size, model="gemini-2.5-flash-image")  # Nano Banana - faster/more stable
+        if result is None and fal_client:
+            print("   [image] Gemini Flash unavailable, falling back to Fal.ai")
+            result = _generate_with_fal(prompt, image_size, seed=seed)
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
