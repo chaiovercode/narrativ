@@ -34,8 +34,9 @@ export function LoadingScreen({ status }) {
     if (!status) return 0;
     let progress = 0;
     if (status.backendReady) progress += 40;
-    if (status.vaultSet) progress += 30;
-    if (status.dataLoaded) progress += 30;
+    if (status.vaultChecked) progress += 20;
+    if (status.vaultSet) progress += 20;
+    if (status.dataLoaded) progress += 20;
     return progress;
   };
 
@@ -69,8 +70,9 @@ export function LoadingScreen({ status }) {
         {status && import.meta.env.DEV && (
           <div className="loading-debug">
             <span className={status.backendReady ? 'ready' : ''}>Backend</span>
-            <span className={status.vaultSet ? 'ready' : ''}>Vault</span>
-            <span className={status.dataLoaded ? 'ready' : ''}>Data</span>
+            <span className={status.vaultChecked ? 'ready' : ''}>Checked</span>
+            <span className={status.vaultSet ? 'ready' : ''}>Synced</span>
+            <span className={status.dataLoaded ? 'ready' : ''}>Ready</span>
           </div>
         )}
       </div>

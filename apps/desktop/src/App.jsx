@@ -71,7 +71,10 @@ function App() {
     handleVaultSelected,
   } = useAppInit();
 
-  // Notes hooks for split view
+  // Vault is ready when initialization is complete and vault is synced
+  const vaultReady = isReady && !!vaultPath && initStatus.vaultSet;
+
+  // Notes hooks for split view - wait for vault to be ready
   const {
     notes,
     folders,
@@ -89,8 +92,8 @@ function App() {
     searchNotes,
     refreshNotes,
     getTreeStructure,
-  } = useNotes();
-  const { savedResearch, refreshBoards } = useBoards();
+  } = useNotes(vaultReady);
+  const { savedResearch, refreshBoards } = useBoards(vaultReady);
 
   // Refresh notes and boards when notes panel opens
   useEffect(() => {

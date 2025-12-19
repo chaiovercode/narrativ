@@ -99,9 +99,6 @@ export function useAppInit() {
         // Mark data as loaded (individual hooks will load their own data)
         setStatus(prev => ({ ...prev, dataLoaded: true }));
 
-        // Small delay to show the loading animation
-        await new Promise(resolve => setTimeout(resolve, 300));
-
         setIsReady(true);
       } catch (err) {
         console.error('App initialization failed:', err);

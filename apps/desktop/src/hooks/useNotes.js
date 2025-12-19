@@ -16,31 +16,15 @@ import {
 /**
  * Hook for managing notes and folders with backend persistence.
  * Includes auto-refresh on window focus and periodic sync.
+ * @param {boolean} vaultReady - Whether vault is synced and ready for API calls
  */
-export function useNotes() {
+export function useNotes(vaultReady = true) {
   const [notes, setNotes] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const lastFetchRef = useRef(0);
-
-  // Fetch notes and folders on mount
-  useEffect(() => {
-    loadAll();
-  }, []);
-
-  // Refresh when window regains focus (for iCloud sync)
-  useEffect(() => {
-    const handleFocus = () => {
-      // Only refresh if last fetch was more than 2 seconds ago
-      if (Date.now() - lastFetchRef.current > 2000) {
-        loadAll();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  const hasLoadedRef = useRef(false);
 
   const loadAll = useCallback(async () => {
     try {
@@ -62,6 +46,29 @@ export function useNotes() {
       setLoading(false);
     }
   }, []);
+
+  // Fetch notes and folders when vault becomes ready
+  useEffect(() => {
+    if (vaultReady && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadAll();
+    }
+  }, [vaultReady, loadAll]);
+
+  // Refresh when window regains focus (for iCloud sync)
+  useEffect(() => {
+    if (!vaultReady) return;
+
+    const handleFocus = () => {
+      // Only refresh if last fetch was more than 2 seconds ago
+      if (Date.now() - lastFetchRef.current > 2000) {
+        loadAll();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [vaultReady, loadAll]);
 
   // Create a new note
   const createNote = useCallback(async (note) => {

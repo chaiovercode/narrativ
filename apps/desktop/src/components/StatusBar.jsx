@@ -26,7 +26,7 @@ function StatusBar() {
 
       {/* Version */}
       <div className="title-bar-right">
-        <span className="app-version">v1.0.0</span>
+        <span className="app-version">v1.0.5</span>
       </div>
     </div>
   );

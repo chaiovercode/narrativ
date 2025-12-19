@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchResearch,
   saveResearch,
@@ -11,12 +11,14 @@ import {
 
 /**
  * Hook for managing research and image boards with backend persistence.
+ * @param {boolean} vaultReady - Whether vault is synced and ready for API calls
  */
-export function useBoards() {
+export function useBoards(vaultReady = true) {
   const [savedResearch, setSavedResearch] = useState([]);
   const [savedImageBoards, setSavedImageBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasLoadedRef = useRef(false);
 
   // Load boards function
   const loadBoards = useCallback(async () => {
@@ -37,10 +39,13 @@ export function useBoards() {
     }
   }, []);
 
-  // Fetch boards on mount
+  // Fetch boards when vault becomes ready
   useEffect(() => {
-    loadBoards();
-  }, [loadBoards]);
+    if (vaultReady && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadBoards();
+    }
+  }, [vaultReady, loadBoards]);
 
   // Add research board (checks for duplicates by topic)
   const addResearch = useCallback(async (board) => {
