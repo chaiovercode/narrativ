@@ -561,12 +561,12 @@ Generate this image now. English text only."""
         if result is None:
             print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
-        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")  # Nano Banana Pro
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
     else:  # gemini-flash (default)
-        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-2.5-flash-image")  # Nano Banana - faster/more stable
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
@@ -606,10 +606,12 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
         print(f"   [image] Using seed {seed} for consistency")
 
     try:
+        print(f"   [image] Calling fal-ai/nano-banana-pro with prompt: {full_prompt[:50]}...")
         result = fal_client.subscribe(
             "fal-ai/nano-banana-pro",
             arguments=arguments,
         )
+        print(f"   [image] Fal result keys: {result.keys() if result else 'None'}")
 
         if result and result.get('images') and len(result['images']) > 0:
             image_url = result['images'][0]['url']
@@ -628,8 +630,10 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
         return None
 
 
-def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-3-pro-image") -> Image.Image:
-    """Generate image using Google Gemini 3 image model."""
+def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-2.5-flash-image") -> Image.Image:
+    """Generate image using Google Gemini 3 image model with retry logic."""
+    import time
+
     if not gemini_client:
         print("   [image] Gemini client not initialized")
         return None
@@ -641,30 +645,42 @@ def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-3-p
 
     full_prompt = aspect_prompt + prompt
 
-    try:
-        response = gemini_client.models.generate_content(
-            model=model,
-            contents=full_prompt,
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE", "TEXT"],
+    # Retry logic for transient errors (503 UNAVAILABLE is common with preview models)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = gemini_client.models.generate_content(
+                model=model,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                )
             )
-        )
 
-        # Extract image from response parts
-        if response.candidates and len(response.candidates) > 0:
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, 'inline_data') and part.inline_data:
-                    image_bytes = part.inline_data.data
-                    image = Image.open(BytesIO(image_bytes))
-                    print(f"   [image] Generated with Gemini 3 Pro Image")
-                    return image
+            # Extract image from response parts
+            if response.candidates and len(response.candidates) > 0:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        image_bytes = part.inline_data.data
+                        image = Image.open(BytesIO(image_bytes))
+                        print(f"   [image] Generated with Gemini 3 Pro Image")
+                        return image
 
-        print(f"   [image] No image returned from Gemini")
-        return None
+            print(f"   [image] No image returned from Gemini")
+            return None
 
-    except Exception as e:
-        print(f"   [image] Gemini generation failed: {e}")
-        return None
+        except Exception as e:
+            error_str = str(e)
+            # Retry on transient errors (503, 429, etc.)
+            if attempt < max_retries - 1 and ('503' in error_str or '429' in error_str or 'UNAVAILABLE' in error_str):
+                wait_time = (attempt + 1) * 2  # 2s, 4s backoff
+                print(f"   [image] Gemini temporarily unavailable, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+                continue
+            print(f"   [image] Gemini generation failed: {e}")
+            return None
+
+    return None
 
 
 def _generate_with_huggingface(prompt: str, image_size: str, quality_mode: str = "free") -> Image.Image:
