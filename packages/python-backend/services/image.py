@@ -561,12 +561,12 @@ Generate this image now. English text only."""
         if result is None:
             print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
-        result = _generate_with_gemini(prompt, image_size, model="imagen-3.0-generate-002")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
     else:  # gemini-flash (default)
-        result = _generate_with_gemini(prompt, image_size, model="imagen-3.0-fast-generate-001")
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")
         if result is None and hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
@@ -628,35 +628,36 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
         return None
 
 
-def _generate_with_gemini(prompt: str, image_size: str, model: str = "imagen-3.0-fast-generate-001") -> Image.Image:
-    """Generate image using Google Gemini/Imagen."""
+def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-3-pro-image-preview") -> Image.Image:
+    """Generate image using Google Gemini 3 image model."""
     if not gemini_client:
         print("   [image] Gemini client not initialized")
         return None
 
     if image_size == "square":
-        aspect_ratio = "1:1"
+        aspect_prompt = "Create a square 1:1 aspect ratio image. "
     else:
-        aspect_ratio = "9:16"
+        aspect_prompt = "Create a vertical portrait 9:16 aspect ratio image. "
+
+    full_prompt = aspect_prompt + prompt
 
     try:
-        response = gemini_client.models.generate_images(
+        response = gemini_client.models.generate_content(
             model=model,
-            prompt=prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio=aspect_ratio,
-                safety_filter_level="BLOCK_ONLY_HIGH",
-                person_generation="ALLOW_ADULT",
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE", "TEXT"],
             )
         )
 
-        if response.generated_images and len(response.generated_images) > 0:
-            image_bytes = response.generated_images[0].image.image_bytes
-            image = Image.open(BytesIO(image_bytes))
-            model_short = "Gemini Pro" if "002" in model else "Gemini Flash"
-            print(f"   [image] Generated with {model_short}")
-            return image
+        # Extract image from response parts
+        if response.candidates and len(response.candidates) > 0:
+            for part in response.candidates[0].content.parts:
+                if hasattr(part, 'inline_data') and part.inline_data:
+                    image_bytes = part.inline_data.data
+                    image = Image.open(BytesIO(image_bytes))
+                    print(f"   [image] Generated with Gemini 3 Pro Image")
+                    return image
 
         print(f"   [image] No image returned from Gemini")
         return None
