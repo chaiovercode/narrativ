@@ -57,3 +57,4 @@ yarn-error.log*
 *.local
 .turbo/
 packages/python-backend/data/images.json
+apps/desktop/src-tauri/resources/narrativ-backend
