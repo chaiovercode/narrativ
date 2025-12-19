@@ -488,7 +488,26 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
         images.sort()
         return images
 
-    # Add new boards for folders not in gallery
+    # First: Update existing boards with new images from their folders
+    # (Must do this BEFORE adding new boards to preserve indices)
+    for folder_name in existing_folders & actual_folders:
+        folder_path = attachments_dir / folder_name
+        current_images = get_images_from_folder(folder_path)
+
+        board_idx = folder_to_board_idx[folder_name]
+        board = boards[board_idx]
+        existing_images = set(board.get("images", []))
+
+        # Check if there are new images
+        new_images = set(current_images) - existing_images
+        if new_images:
+            # Update board with all current images from folder
+            boards[board_idx]["images"] = current_images
+            updated_count += 1
+            print(f"[sync] Updated board for folder: {folder_name} (+{len(new_images)} images, total: {len(current_images)})")
+
+    # Then: Add new boards for folders not in gallery
+    # (Using append to avoid shifting indices)
     for folder_name in actual_folders - existing_folders:
         folder_path = attachments_dir / folder_name
         images = get_images_from_folder(folder_path)
@@ -508,28 +527,11 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
                 "createdAt": datetime.now().isoformat(),
                 "synced": True  # Mark as synced from folder
             }
-            boards.insert(0, new_board)
+            boards.append(new_board)  # Append instead of insert(0) to preserve indices
             added_count += 1
             print(f"[sync] Added board for folder: {folder_name} ({len(images)} images)")
 
-    # Update existing boards with new images from their folders
-    for folder_name in existing_folders & actual_folders:
-        folder_path = attachments_dir / folder_name
-        current_images = get_images_from_folder(folder_path)
-
-        board_idx = folder_to_board_idx[folder_name]
-        board = boards[board_idx]
-        existing_images = set(board.get("images", []))
-
-        # Check if there are new images
-        new_images = set(current_images) - existing_images
-        if new_images:
-            # Update board with all current images from folder
-            boards[board_idx]["images"] = current_images
-            updated_count += 1
-            print(f"[sync] Updated board for folder: {folder_name} (+{len(new_images)} images, total: {len(current_images)})")
-
-    # Remove boards for folders that no longer exist
+    # Finally: Remove boards for folders that no longer exist
     boards_to_keep = []
     for board in boards:
         images = board.get("images", [])
