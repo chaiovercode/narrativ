@@ -27,12 +27,17 @@ def init_clients():
     # Gemini client
     gemini_client = None
     if google_key:
+        masked_key = f"{google_key[:4]}...{google_key[-4:]}" if len(google_key) > 8 else "INVALID_LENGTH"
+        print(f"[clients] Google Key found: {masked_key} (Length: {len(google_key)})")
+        
         try:
             from google import genai
             gemini_client = genai.Client(api_key=google_key)
             print("[clients] Gemini enabled")
         except ImportError:
             print("[clients] google-genai not installed")
+    else:
+        print("[clients] No Google API key found")
 
     # fal.ai client
     fal_client = None

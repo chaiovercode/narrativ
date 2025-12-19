@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Narrativ",
-    "version": "1.0.5"
+    "version": "1.0.11"
   },
   "tauri": {
     "macOSPrivateApi": true,
@@ -28,7 +28,10 @@
       },
       "fs": {
         "all": true,
-        "scope": ["$APPDATA/**", "$RESOURCE/**"]
+        "scope": [
+          "$APPDATA/**",
+          "$RESOURCE/**"
+        ]
       },
       "path": {
         "all": true
@@ -38,7 +41,11 @@
       },
       "http": {
         "all": true,
-        "scope": ["http://localhost/**", "http://127.0.0.1/**", "https://**"]
+        "scope": [
+          "http://localhost/**",
+          "http://127.0.0.1/**",
+          "https://**"
+        ]
       },
       "process": {
         "all": true
@@ -65,7 +72,9 @@
         "providerShortName": null,
         "entitlements": null
       },
-      "resources": ["resources/narrativ-backend"]
+      "resources": [
+        "resources/narrativ-backend"
+      ]
     },
     "security": {
       "csp": null

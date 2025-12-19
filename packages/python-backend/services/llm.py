@@ -6,7 +6,7 @@ Allows switching between providers without changing service code.
 import requests
 import json
 from config import OLLAMA_URL, OLLAMA_MODEL
-from .clients import gemini_client, ollama_available, check_ollama, has_ollama_text_model
+from . import clients
 
 # Default provider and model
 _current_provider = "gemini"
@@ -47,17 +47,17 @@ def generate_text(prompt: str, provider: str = None) -> str:
 
     # Check availability and fall back if needed
     if use_provider == "ollama":
-        if check_ollama():
+        if clients.check_ollama():
             return _generate_with_ollama(prompt)
-        elif gemini_client:
+        elif clients.gemini_client:
             print("[llm] Ollama not available, falling back to Gemini")
             return _generate_with_gemini(prompt)
         else:
             raise Exception("No LLM provider available. Start Ollama or add Google API key.")
     else:  # gemini
-        if gemini_client:
+        if clients.gemini_client:
             return _generate_with_gemini(prompt)
-        elif check_ollama():
+        elif clients.check_ollama():
             print("[llm] Gemini not available, falling back to Ollama")
             return _generate_with_ollama(prompt)
         else:
@@ -65,10 +65,10 @@ def generate_text(prompt: str, provider: str = None) -> str:
 
 def _generate_with_gemini(prompt: str) -> str:
     """Generate text using Google Gemini"""
-    if not gemini_client:
+    if not clients.gemini_client:
         raise Exception("Gemini client not available. Set GOOGLE_API_KEY.")
 
-    response = gemini_client.models.generate_content(
+    response = clients.gemini_client.models.generate_content(
         model='gemini-2.0-flash',
         contents=prompt
     )
@@ -77,14 +77,14 @@ def _generate_with_gemini(prompt: str) -> str:
 def _generate_with_ollama(prompt: str) -> str:
     """Generate text using local Ollama"""
     # Re-check availability in case Ollama was started after app launch
-    if not check_ollama():
+    if not clients.check_ollama():
         raise Exception("Ollama not running. Start Ollama first.")
 
     # Use user-selected model, auto-detect, or fall back to config default
     if _current_ollama_model:
         model = _current_ollama_model
     else:
-        model = has_ollama_text_model() or OLLAMA_MODEL
+        model = clients.has_ollama_text_model() or OLLAMA_MODEL
     print(f"[llm] Using Ollama model: {model}")
 
     try:
@@ -112,16 +112,16 @@ def _generate_with_ollama(prompt: str) -> str:
 def is_provider_available(provider: str) -> bool:
     """Check if a provider is available"""
     if provider == "gemini":
-        return gemini_client is not None
+        return clients.gemini_client is not None
     elif provider == "ollama":
-        return check_ollama()
+        return clients.check_ollama()
     return False
 
 def get_available_providers() -> list:
     """Get list of currently available providers"""
     available = []
-    if gemini_client:
+    if clients.gemini_client:
         available.append("gemini")
-    if check_ollama():
+    if clients.check_ollama():
         available.append("ollama")
     return available

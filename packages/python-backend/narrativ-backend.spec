@@ -1,25 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
-
-datas = []
-binaries = []
-hiddenimports = ['tiktoken_ext.openai_public', 'tiktoken_ext']
-tmp_ret = collect_all('google.generativeai')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('google.ai.generativelanguage')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hiddenimports,
+    binaries=[],
+    datas=[('services', 'services'), ('utils', 'utils'), ('config.py', '.'), ('data', 'data')],
+    hiddenimports=['uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto', 'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan', 'uvicorn.lifespan.on', 'uvicorn.lifespan.off', 'google.genai', 'PIL', 'PIL.Image', 'feedparser', 'pydantic', 'multipart', 'dotenv', 'services', 'services.research', 'services.image_gen', 'services.image', 'services.styles', 'services.brand', 'services.boards', 'services.notes', 'services.trending', 'services.rss', 'services.clients', 'services.llm', 'services.consistency', 'services.aesthetic', 'services.caption', 'services.text_to_slides', 'utils', 'utils.vault', 'utils.text', 'utils.cache', 'utils.search', 'utils.json_utils', 'duckduckgo_search', 'huggingface_hub'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['torch', 'tensorflow', 'transformers', 'scipy', 'matplotlib', 'pandas', 'numpy.testing', 'PIL._tkinter_finder'],
+    excludes=['tkinter', 'matplotlib', 'scipy', 'pandas', 'numpy.testing', 'numpy.distutils', 'numpy.f2py', 'PIL.ImageQt', 'PIL.ImageTk', 'unittest', 'pytest', 'setuptools', 'pip', 'wheel', 'pkg_resources', 'distutils', 'lib2to3', 'email.test', 'test', 'xmlrpc', 'pydoc', 'doctest', 'torch', 'torchvision', 'torchaudio', 'pyarrow', 'zmq', 'IPython', 'jupyter', 'notebook', 'jedi', 'parso', 'sympy', 'nltk', 'networkx', 'pygments', 'lxml', 'cv2', 'sklearn', 'transformers', 'tensorflow', 'keras', 'boto3', 'botocore', 'awscli', 'azure', 'google.cloud'],
     noarchive=False,
     optimize=0,
 )
@@ -34,8 +25,8 @@ exe = EXE(
     name='narrativ-backend',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
+    strip=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,

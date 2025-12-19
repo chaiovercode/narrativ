@@ -13,7 +13,7 @@ from typing import Optional, Tuple
 from PIL import Image, ImageDraw, ImageFont
 from google.genai import types
 from config import OUTPUT_DIR
-from .clients import gemini_client, fal_client, hf_api_key
+from . import clients
 from .brand import get_brand_config, apply_watermark, get_brand_by_id
 
 
@@ -546,34 +546,36 @@ Generate this image now. English text only."""
 
     if provider == "fal":
         result = _generate_with_fal(prompt, image_size, seed=seed)
-        if result is None and gemini_client:
+        if result is None and clients.gemini_client:
             print("   [image] Fal.ai unavailable, falling back to Gemini")
             result = _generate_with_gemini(prompt, image_size)
-        if result is None and hf_api_key:
+        if result is None and clients.hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
+
     elif provider == "huggingface":
         result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
-        if result is None and gemini_client:
+        if result is None and clients.gemini_client:
             print("   [image] HuggingFace unavailable, falling back to Gemini")
             result = _generate_with_gemini(prompt, image_size)
 
-        if result is None:
-            print("   [image] HuggingFace failed. skipped Fal.ai fallback to avoid unexpected costs.")
     elif provider == "gemini-pro":
-        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")  # Nano Banana Pro
-        if result is None and fal_client:
+        # gemini-3-pro-image-preview
+        result = _generate_with_gemini(prompt, image_size, model="gemini-3-pro-image-preview")
+        if result is None and clients.fal_client:
             print("   [image] Gemini Pro unavailable, falling back to Fal.ai")
             result = _generate_with_fal(prompt, image_size, seed=seed)
-        if result is None and hf_api_key:
+        if result is None and clients.hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
+            
     else:  # gemini-flash (default)
-        result = _generate_with_gemini(prompt, image_size, model="gemini-2.5-flash-image")  # Nano Banana - faster/more stable
-        if result is None and fal_client:
+        # gemini-2.5-flash-image
+        result = _generate_with_gemini(prompt, image_size, model="gemini-2.5-flash-image")
+        if result is None and clients.fal_client:
             print("   [image] Gemini Flash unavailable, falling back to Fal.ai")
             result = _generate_with_fal(prompt, image_size, seed=seed)
-        if result is None and hf_api_key:
+        if result is None and clients.hf_api_key:
             print("   [image] Falling back to HuggingFace")
             result = _generate_with_huggingface(hf_prompt, image_size, hf_quality_mode)
 
@@ -582,7 +584,7 @@ Generate this image now. English text only."""
 
 def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.Image:
     """Generate image using fal.ai Flux with optional seed for consistency."""
-    if not fal_client:
+    if not clients.fal_client:
         print("   [image] fal.ai client not initialized")
         return None
 
@@ -613,7 +615,7 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
 
     try:
         print(f"   [image] Calling fal-ai/nano-banana-pro with prompt: {full_prompt[:50]}...")
-        result = fal_client.subscribe(
+        result = clients.fal_client.subscribe(
             "fal-ai/nano-banana-pro",
             arguments=arguments,
         )
@@ -636,11 +638,13 @@ def _generate_with_fal(prompt: str, image_size: str, seed: int = None) -> Image.
         return None
 
 
+
+
 def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-2.5-flash-image") -> Image.Image:
-    """Generate image using Google Gemini 3 image model with retry logic."""
+    """Generate image using Gemini Nano Banana models (Flash Image / Pro Image)."""
     import time
 
-    if not gemini_client:
+    if not clients.gemini_client:
         print("   [image] Gemini client not initialized")
         return None
 
@@ -651,37 +655,48 @@ def _generate_with_gemini(prompt: str, image_size: str, model: str = "gemini-2.5
 
     full_prompt = aspect_prompt + prompt
 
-    # Retry logic for transient errors (503 UNAVAILABLE is common with preview models)
+    # Retry logic for transient errors
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = gemini_client.models.generate_content(
+            # Use generate_content as per Nano Banana docs
+            # Note: We request IMAGE modality explicitly
+            response = clients.gemini_client.models.generate_content(
                 model=model,
                 contents=full_prompt,
                 config=types.GenerateContentConfig(
-                    response_modalities=["IMAGE", "TEXT"],
+                    safety_settings=[
+                        types.SafetySetting(
+                            category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                            threshold="BLOCK_ONLY_HIGH"
+                        ),
+                    ]
                 )
             )
 
-            # Extract image from response parts
-            if response.candidates and len(response.candidates) > 0:
-                for part in response.candidates[0].content.parts:
+            # Support both SDK response structures (direct parts or candidates)
+            parts = None
+            if hasattr(response, 'parts'):
+                parts = response.parts
+            elif hasattr(response, 'candidates') and response.candidates:
+                parts = response.candidates[0].content.parts
+            
+            if parts:
+                for part in parts:
                     if hasattr(part, 'inline_data') and part.inline_data:
                         image_bytes = part.inline_data.data
                         image = Image.open(BytesIO(image_bytes))
-                        print(f"   [image] Generated with Gemini 3 Pro Image")
+                        print(f"   [image] Generated with {model}")
                         return image
-
-            print(f"   [image] No image returned from Gemini")
+            
+            print(f"   [image] No image returned from Gemini ({model})")
             return None
 
         except Exception as e:
             error_str = str(e)
-            # Retry on transient errors (503, 429, etc.)
             if attempt < max_retries - 1 and ('503' in error_str or '429' in error_str or 'UNAVAILABLE' in error_str):
-                wait_time = (attempt + 1) * 2  # 2s, 4s backoff
-                print(f"   [image] Gemini temporarily unavailable, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
-                time.sleep(wait_time)
+                # Backoff
+                time.sleep((attempt + 1) * 2)
                 continue
             print(f"   [image] Gemini generation failed: {e}")
             return None
@@ -694,15 +709,15 @@ def _generate_with_huggingface(prompt: str, image_size: str, quality_mode: str =
 
     quality_mode: 'quality' uses premium models (may cost credits), 'free' uses only free tier
     """
-    if not hf_api_key:
+    if not clients.hf_api_key:
         print("   [image] Hugging Face API key not set - add it in Settings > API Keys")
         return None
 
-    print(f"   [image] Using HuggingFace with key: {hf_api_key[:8]}... (mode: {quality_mode})")
+    print(f"   [image] Using HuggingFace with key: {clients.hf_api_key[:8]}... (mode: {quality_mode})")
 
     try:
         from huggingface_hub import InferenceClient
-        client = InferenceClient(token=hf_api_key)
+        client = InferenceClient(token=clients.hf_api_key)
 
         # Models based on quality mode
         if quality_mode == "quality":

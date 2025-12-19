@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.vault import get_vault_path, set_vault_path
 from utils.text import slugify
@@ -479,56 +480,62 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
                 pass
 
     existing_folders = set(folder_to_board_idx.keys())
-
-    # Use the folder_names we already collected (avoids duplicate iterdir call)
     actual_folders = set(folder_names)
 
     added_count = 0
     removed_count = 0
     updated_count = 0
-
-    def get_images_from_folder(folder_path: Path) -> List[str]:
-        """Scan folder for all image files and return URLs."""
+    
+    # Pre-calculate folder images in parallel
+    folder_images_map = {}
+    
+    def scan_folder(name):
+        path = attachments_dir / name
         images = []
         try:
-            for ext in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
-                for img_file in folder_path.glob(ext):
-                    img_url = f"http://127.0.0.1:8000/images/{folder_path.name}/{img_file.name}"
+            # Single pass iteration instead of multiple globs
+            valid_exts = {'.png', '.jpg', '.jpeg', '.webp'}
+            for entry in path.iterdir():
+                if entry.is_file() and entry.suffix.lower() in valid_exts:
+                    img_url = f"http://127.0.0.1:8000/images/{name}/{entry.name}"
                     images.append(img_url)
             images.sort()
-        except PermissionError:
-            print(f"[sync] Permission denied accessing folder: {folder_path}")
-        return images
+            return name, images
+        except Exception as e:
+            print(f"[sync] Error scanning folder {name}: {e}")
+            return name, []
 
-    # First: Update existing boards with new images from their folders
-    # (Must do this BEFORE adding new boards to preserve indices)
+    # Use thread pool to scan folders
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(scan_folder, name): name for name in actual_folders}
+        for future in as_completed(futures):
+            name, images = future.result()
+            folder_images_map[name] = images
+
+    # Process updates (CPU bound, fast)
+    
+    # First: Update existing boards
     for folder_name in existing_folders & actual_folders:
-        folder_path = attachments_dir / folder_name
-        current_images = get_images_from_folder(folder_path)
-
+        current_images = folder_images_map.get(folder_name, [])
+        
         board_idx = folder_to_board_idx[folder_name]
-        board = boards[board_idx]
-        existing_images = set(board.get("images", []))
-
+        existing_images = set(boards[board_idx].get("images", []))
+        
         # Check if there are new images
-        new_images = set(current_images) - existing_images
-        if new_images:
-            # Update board with all current images from folder
+        if set(current_images) != existing_images:
             boards[board_idx]["images"] = current_images
             updated_count += 1
-            print(f"[sync] Updated board for folder: {folder_name} (+{len(new_images)} images, total: {len(current_images)})")
+            # print(f"[sync] Updated board: {folder_name}")
 
-    # Then: Add new boards for folders not in gallery
-    # (Using append to avoid shifting indices)
+    # Then: Add new boards
     for folder_name in actual_folders - existing_folders:
-        folder_path = attachments_dir / folder_name
-        images = get_images_from_folder(folder_path)
-
+        images = folder_images_map.get(folder_name, [])
+        
         if images:
-            # Create a new board
-            # Strip timestamp suffix (e.g., _20251219_025633) from folder name
+            # Strip timestamp suffix
             clean_name = re.sub(r'_\d{8}_\d{6}$', '', folder_name)
             topic = clean_name.replace("-", " ").replace("_", " ").title()
+            
             new_board = {
                 "id": int(datetime.now().timestamp() * 1000) + added_count,
                 "topic": topic,
@@ -537,21 +544,22 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
                 "caption": "",
                 "hashtags": [],
                 "createdAt": datetime.now().isoformat(),
-                "synced": True  # Mark as synced from folder
+                "synced": True
             }
-            boards.append(new_board)  # Append instead of insert(0) to preserve indices
+            boards.append(new_board)
             added_count += 1
-            print(f"[sync] Added board for folder: {folder_name} ({len(images)} images)")
+            print(f"[sync] Added board: {folder_name}")
 
-    # Finally: Remove boards for folders that no longer exist
+    # Finally: Remove boards for missing folders
     boards_to_keep = []
     for board in boards:
         images = board.get("images", [])
         if not images:
             boards_to_keep.append(board)
             continue
-
+            
         # Check first image's folder
+        item_kept = True
         try:
             first_url = images[0]
             path_parts = urlparse(first_url).path.split('/')
@@ -559,23 +567,19 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
                 idx = path_parts.index('images')
                 if idx + 1 < len(path_parts):
                     folder_name = path_parts[idx + 1]
-                    if folder_name in actual_folders:
-                        boards_to_keep.append(board)
-                    else:
+                    if folder_name not in actual_folders:
                         removed_count += 1
-                        print(f"[sync] Removed board for missing folder: {folder_name}")
-                else:
-                    boards_to_keep.append(board)
-            else:
-                boards_to_keep.append(board)
+                        item_kept = False
         except Exception:
+            pass
+            
+        if item_kept:
             boards_to_keep.append(board)
 
     # Save updated boards
     if added_count > 0 or removed_count > 0 or updated_count > 0:
         save_boards("images", boards_to_keep)
 
-    # Calculate total images across all boards
     total_images_count = sum(len(b.get("images", [])) for b in boards_to_keep)
 
     return {
