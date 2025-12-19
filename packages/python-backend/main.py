@@ -374,11 +374,15 @@ async def set_vault(request: VaultRequest):
 
     # Sync attachments folder with image boards
     sync_result = sync_attachments_with_boards()
-    if sync_result.get("added", 0) > 0 or sync_result.get("removed", 0) > 0:
+    if sync_result.get("error"):
+        print(f"[vault] Sync error: {sync_result.get('error')}")
+    elif sync_result.get("added", 0) > 0 or sync_result.get("removed", 0) > 0:
         print(f"[vault] Synced attachments: {sync_result.get('added', 0)} added, {sync_result.get('removed', 0)} removed")
 
+    # Return ok status even if sync had issues - vault is still set
+    response_status = "ok" if not sync_result.get("error") else "warning"
     return {
-        "status": "ok",
+        "status": response_status,
         "vault_path": VAULT_PATH,
         "attachments_dir": OUTPUT_DIR,
         "research_dir": research_dir,

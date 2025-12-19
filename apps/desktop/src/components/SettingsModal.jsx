@@ -657,9 +657,11 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
                 </button>
               </div>
               {syncResult && (
-                <div className={`sync-result ${syncResult.error ? 'error' : 'success'}`}>
+                <div className={`sync-result ${syncResult.error || syncResult.attachments?.error ? 'error' : 'success'}`}>
                   {syncResult.error ? (
                     <span>{syncResult.error}</span>
+                  ) : syncResult.attachments?.error ? (
+                    <span>{syncResult.attachments.error}</span>
                   ) : (
                     <div className="sync-stats">
                       <span>Sync complete!</span>

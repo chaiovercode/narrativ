@@ -444,7 +444,19 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
 
     print(f"[DEBUG] Syncing vault: {get_vault_path()}")
     print(f"[DEBUG] Attachments dir: {attachments_dir}")
-    print(f"[DEBUG] Attachments Content: {[x.name for x in attachments_dir.iterdir()]}")
+
+    # Try to list directory contents - may fail with permission errors on iCloud
+    try:
+        folder_names = [x.name for x in attachments_dir.iterdir() if x.is_dir()]
+        print(f"[DEBUG] Attachments Content: {folder_names}")
+    except PermissionError as e:
+        print(f"[sync] Permission denied accessing attachments folder: {e}")
+        return {
+            "added": 0,
+            "removed": 0,
+            "updated": 0,
+            "error": "Permission denied. Grant Full Disk Access to Narrativ in System Settings > Privacy & Security."
+        }
 
     # Load current image boards
     boards = load_boards("images")
@@ -468,11 +480,8 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
 
     existing_folders = set(folder_to_board_idx.keys())
 
-    # Scan attachments folder for actual folders
-    actual_folders = set()
-    for folder in attachments_dir.iterdir():
-        if folder.is_dir():
-            actual_folders.add(folder.name)
+    # Use the folder_names we already collected (avoids duplicate iterdir call)
+    actual_folders = set(folder_names)
 
     added_count = 0
     removed_count = 0
@@ -481,11 +490,14 @@ def sync_attachments_with_boards() -> Dict[str, Any]:
     def get_images_from_folder(folder_path: Path) -> List[str]:
         """Scan folder for all image files and return URLs."""
         images = []
-        for ext in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
-            for img_file in folder_path.glob(ext):
-                img_url = f"http://127.0.0.1:8000/images/{folder_path.name}/{img_file.name}"
-                images.append(img_url)
-        images.sort()
+        try:
+            for ext in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
+                for img_file in folder_path.glob(ext):
+                    img_url = f"http://127.0.0.1:8000/images/{folder_path.name}/{img_file.name}"
+                    images.append(img_url)
+            images.sort()
+        except PermissionError:
+            print(f"[sync] Permission denied accessing folder: {folder_path}")
         return images
 
     # First: Update existing boards with new images from their folders
