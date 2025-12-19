@@ -97,6 +97,7 @@ export async function setVaultPath(path) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path }),
+    signal: AbortSignal.timeout(15000) // 15 second timeout for vault sync
   });
   if (!response.ok) throw new Error('Failed to set vault path');
   const data = await response.json();
