@@ -2,6 +2,19 @@
 
 AI-powered desktop application for creating stunning social media stories and posts.
 
+## Installation
+
+**Current Version: 1.0.11**
+
+Install via Homebrew (macOS Apple Silicon):
+
+```bash
+brew tap chaiovercode/getnarrativ
+brew install narrativ
+```
+
+Or download the latest DMG from [Releases](https://github.com/chaiovercode/homebrew-getnarrativ/releases).
+
 ## Features
 
 - **AI Story Generation**: Research any topic and create beautiful visual stories
@@ -10,7 +23,7 @@ AI-powered desktop application for creating stunning social media stories and po
 - **Brand Kit**: Add your logo or text watermark to generated images
 - **Local First**: All content generated and stored on your machine
 
-## Requirements
+## Requirements (Development)
 
 - macOS 12 (Monterey) or later
 - Python 3.10+
