@@ -157,6 +157,16 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
     setSyncing(true);
     setSyncResult(null);
     try {
+      // First ensure vault path is set in backend
+      if (vaultPath) {
+        await fetch('http://127.0.0.1:8000/vault/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: vaultPath }),
+        });
+      }
+
+      // Then sync
       const response = await fetch('http://127.0.0.1:8000/vault/sync', {
         method: 'POST',
       });
@@ -164,7 +174,8 @@ function SettingsModal({ isOpen, onClose, onResetVault }) {
         const result = await response.json();
         setSyncResult(result);
       } else {
-        setSyncResult({ error: 'Failed to sync vault' });
+        const errorData = await response.json().catch(() => ({}));
+        setSyncResult({ error: errorData.detail || 'Failed to sync vault' });
       }
     } catch (err) {
       console.error('Failed to sync vault:', err);
